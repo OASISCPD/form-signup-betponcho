@@ -237,6 +237,15 @@ function App() {
   const confirmPasswordHasValue = contact.confirmPassword.length > 0;
   const confirmPasswordMatches = confirmPasswordHasValue && contact.confirmPassword === contact.password;
   const confirmPasswordMismatch = confirmPasswordHasValue && contact.confirmPassword !== contact.password;
+  const passwordConditionsOk =
+    contact.password.length > 0 &&
+    /\d/.test(contact.password) &&
+    !/\s/.test(contact.password) &&
+    /^[\x00-\x7F]*$/.test(contact.password) &&
+    contact.password.length >= 6 &&
+    contact.password.length <= 50 &&
+    /[A-Z]/.test(contact.password) &&
+    /[a-z]/.test(contact.password);
 
   const validateIdentity = () => {
     const nextErrors: Record<string, string> = {};
@@ -354,10 +363,22 @@ function App() {
     await new Promise((resolve) => setTimeout(resolve, 1300));
     if (completionRequestId.current !== currentRequestId) return;
     setStage("complete");
+    const now = new Date();
+    const completedAtArgentina = new Intl.DateTimeFormat("es-AR", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(now);
     const registrationPayload = {
       event: "registration_completed",
       completedSteps: 3,
-      completedAt: new Date().toISOString(),
+      completedAtArgentina,
+      timezone: "America/Argentina/Buenos_Aires",
       sources: {
         local: {
           identity,
@@ -383,19 +404,19 @@ function App() {
       },
     };
     console.info("Proceso terminado: pasos 1, 2 y 3 completados.");
-    console.log("Payload de registro:", registrationPayload);
+    console.log("Payload de registro:\n" + JSON.stringify(registrationPayload, null, 2));
   };
 
   const handlePrefillContinue = () => {
     const nextErrors: Record<string, string> = {};
     if (!profile.estadoCivil) {
-      nextErrors.estadoCivil = "Selecciona un estado civil.";
+      nextErrors.estadoCivil = "Selecciona un estado civil";
     }
     if (!profile.ocupacion) {
-      nextErrors.ocupacion = "Selecciona una ocupacion.";
+      nextErrors.ocupacion = "Selecciona una ocupacion";
     }
     if (!profile.pep) {
-      nextErrors.pep = "Selecciona una opcion para Persona Expuesta Politicamente.";
+      nextErrors.pep = "Selecciona una opcion para Persona Expuesta Politicamente";
     }
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -717,7 +738,7 @@ function App() {
                   style={{ marginTop: 3 }}
                 />
                 <span style={{ fontSize: 13, lineHeight: 1.35, color: TEXT_SECONDARY }}>
-                  Tengo mas de 18 años y he aceptado la{" "}
+                  Tengo más de 18 años y he aceptado la{" "}
                   <button
                     type="button"
                     onClick={(event) => {
@@ -755,7 +776,7 @@ function App() {
                       font: "inherit",
                     }}
                   >
-                    Términos y Condiciones generales
+                    Términos y Condiciones Generales
                   </button>
                   .
                 </span>
@@ -916,7 +937,14 @@ function App() {
                     });
                   }}
                   type="password"
-                  style={inputBase}
+                  style={{
+                    ...inputBase,
+                    border: errors.password
+                      ? "1px solid rgba(255, 110, 110, 0.85)"
+                      : passwordConditionsOk
+                        ? "1px solid rgba(35, 214, 120, 0.7)"
+                        : inputBase.border,
+                  }}
                   placeholder="********"
                 />
                 {errors.password ? <small style={{ color: ERROR_TEXT }}>{errors.password}</small> : null}
@@ -1067,10 +1095,12 @@ function App() {
               </p>
               <button
                 type="button"
-                onClick={restartFlow}
+                onClick={() => {
+                  window.location.href = "https://betponcho.bet.ar/";
+                }}
                 style={secondaryButton}
               >
-                Crear otra cuenta
+                Ir a BetPoncho
               </button>
             </div>
           )}
@@ -1090,17 +1120,32 @@ function App() {
 
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "grid", gap: 4 }}>
-      <small style={{ opacity: 0.74, letterSpacing: "0.04em", textTransform: "uppercase", fontSize: 11 }}>{label}</small>
+    <div style={{ display: "grid", gap: 4, opacity: 0.86 }}>
+      <small
+        style={{
+          opacity: 0.72,
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          fontSize: 11,
+          color: "rgba(228, 234, 245, 0.72)",
+        }}
+      >
+        {label}
+      </small>
       <div
+        aria-readonly="true"
         style={{
           borderRadius: 12,
-          border: "1px solid rgba(255,255,255,0.14)",
-          background: "rgba(4, 11, 22, 0.52)",
+          border: "1px solid rgba(188, 198, 216, 0.24)",
+          background: "linear-gradient(165deg, rgba(82, 90, 108, 0.42) 0%, rgba(56, 63, 78, 0.45) 100%)",
           minHeight: 44,
           display: "grid",
           alignItems: "center",
           padding: "0 12px",
+          color: "rgba(232, 236, 244, 0.78)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+          cursor: "not-allowed",
+          userSelect: "none",
         }}
       >
         {value}
