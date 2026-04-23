@@ -54,6 +54,24 @@ body {
   letter-spacing: 0.01em;
 }
 
+.stage-transition {
+  transform-origin: center top;
+  animation: stage-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes stage-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+    filter: blur(1.5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
 .email-auto-wrapper {
   width: 100%;
 }
@@ -68,6 +86,19 @@ body {
   padding: 13px 14px;
   outline: none;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 6px 14px -10px rgba(0, 0, 0, 0.65);
+  transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.email-auto-input.email-auto-input-error {
+  border: 1px solid rgba(255, 110, 110, 0.85);
+}
+
+.email-auto-input.email-auto-input-warning {
+  border: 1px solid rgba(255, 178, 96, 0.76);
+}
+
+.email-auto-input.email-auto-input-valid {
+  border: 1px solid rgba(35, 214, 120, 0.7);
 }
 
 .email-auto-input::placeholder {
@@ -76,22 +107,54 @@ body {
 
 .email-auto-dropdown {
   margin-top: 6px;
+  margin-bottom: 0;
+  padding: 0;
+  list-style: none;
   border-radius: 12px;
   border: 1px solid rgba(214, 84, 84, 0.38);
   background: rgba(16, 22, 36, 0.98);
   box-shadow: 0 16px 32px -22px rgba(0, 0, 0, 0.9);
   overflow: hidden;
+  transform-origin: top center;
+  animation: email-dropdown-enter 170ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .email-auto-suggestion {
+  list-style: none;
   padding: 10px 12px;
   cursor: pointer;
   display: flex;
   gap: 0;
+  transition: background-color 140ms ease;
+  animation: email-suggestion-enter 220ms ease both;
 }
 
 .email-auto-suggestion:hover {
-  background: rgba(152, 0, 0, 0.24);
+  background: rgba(152, 0, 0, 0.18);
+}
+
+.email-auto-suggestion[data-active-email="true"] {
+  background: rgba(152, 0, 0, 0.22);
+}
+
+.email-auto-suggestion:nth-child(1) {
+  animation-delay: 20ms;
+}
+
+.email-auto-suggestion:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.email-auto-suggestion:nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.email-auto-suggestion:nth-child(4) {
+  animation-delay: 80ms;
+}
+
+.email-auto-suggestion:nth-child(5) {
+  animation-delay: 100ms;
 }
 
 .email-auto-username {
@@ -100,4 +163,162 @@ body {
 
 .email-auto-domain {
   color: rgba(255, 185, 185, 0.95);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+select,
+.email-auto-input {
+  transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+input[type="text"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="number"]:focus-visible,
+select:focus-visible,
+.email-auto-input:focus-visible {
+  border-color: rgba(255, 124, 124, 0.85) !important;
+  box-shadow: 0 0 0 3px rgba(232, 66, 66, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.primary-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 20px 28px -18px rgba(152, 0, 0, 0.92), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.primary-cta:active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+.pep-radio-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 74px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 174, 174, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.88);
+  transition: border-color 160ms ease, background-color 160ms ease, transform 120ms ease;
+}
+
+.pep-radio-chip:hover {
+  border-color: rgba(255, 205, 205, 0.72);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.pep-radio-chip-active {
+  border-color: rgba(255, 120, 120, 0.8);
+  background: rgba(152, 0, 0, 0.3);
+  color: #fff;
+}
+
+.pep-radio-chip:active {
+  transform: translateY(1px);
+}
+
+.pep-radio-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+small {
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+@keyframes email-dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes email-suggestion-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage-transition {
+    animation: none;
+  }
+  .email-auto-dropdown,
+  .email-auto-suggestion {
+    animation: none;
+  }
+}
+
+.phone-input-container {
+  width: 100% !important;
+}
+
+.phone-input-field {
+  width: 100% !important;
+  height: 50px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(224, 86, 86, 0.55) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: rgba(255, 255, 255, 0.97) !important;
+  font-size: 16px !important;
+  padding-left: 56px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 6px 14px -10px rgba(0, 0, 0, 0.65) !important;
+}
+
+.phone-input-field.phone-input-field-error {
+  border: 1px solid rgba(255, 110, 110, 0.85) !important;
+}
+
+.phone-input-flag {
+  width: 42px !important;
+  border-radius: 14px 0 0 14px !important;
+  border: 1px solid rgba(224, 86, 86, 0.55) !important;
+  border-right: none !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.phone-input-flag.phone-input-flag-error {
+  border: 1px solid rgba(255, 110, 110, 0.85) !important;
+  border-right: none !important;
+}
+
+.phone-input-container .selected-flag:hover,
+.phone-input-container .selected-flag:focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.phone-input-dropdown {
+  background: rgba(16, 22, 36, 0.98) !important;
+  border: 1px solid rgba(214, 84, 84, 0.38) !important;
+  border-radius: 12px !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.phone-input-dropdown .country {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.phone-input-dropdown .country:hover,
+.phone-input-dropdown .country.highlight {
+  background: rgba(152, 0, 0, 0.2) !important;
 }
