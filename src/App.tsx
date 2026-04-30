@@ -36,7 +36,6 @@ import {
 } from "./app/formRules";
 import { LegalModal } from "./components/modals/LegalModal";
 import { ManualPrefillModal } from "./components/modals/ManualPrefillModal";
-import { ProvinceNotSaltaModal } from "./components/modals/ProvinceNotSaltaModal";
 import { ReviewPendingModal } from "./components/modals/ReviewPendingModal";
 import { ContactStep } from "./components/steps/ContactStep";
 import { FlowHeader } from "./components/steps/FlowHeader";
@@ -93,7 +92,6 @@ function useRegistrationFlowScreen() {
     setErrors,
     setNosis,
     setLegalModal,
-    setProvinceNotSaltaModalMessage,
   } = useFlowState(sessionIdFromUrl);
   const {
     stage,
@@ -105,7 +103,6 @@ function useRegistrationFlowScreen() {
     errors,
     nosis,
     legalModal,
-    provinceNotSaltaModalMessage,
   } = state;
   const nosisRequestId = useRef(0);
   const completionRequestId = useRef(0);
@@ -118,6 +115,9 @@ function useRegistrationFlowScreen() {
   const lastTrackedStageRef = useRef<Stage | null>(null);
   const [showReviewPendingModal, setShowReviewPendingModal] = useState(false);
   const [showManualPrefillModal, setShowManualPrefillModal] = useState(false);
+  const [isSubmittingIdentity, setIsSubmittingIdentity] = useState(false);
+  const [isSubmittingPrefill, setIsSubmittingPrefill] = useState(false);
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false);
 
   const step = useMemo(() => {
     if (stage === "welcome") return 0;
@@ -219,12 +219,9 @@ function useRegistrationFlowScreen() {
       trackEvent("form_ineligible", {
         stage,
         step_index: step,
-        reason: provinceNotSaltaModalMessage.includes("Salta")
-          ? "PROVINCE_NOT_SALTA"
-          : undefined,
       });
     }
-  }, [stage, step, trackEvent, provinceNotSaltaModalMessage]);
+  }, [stage, step, trackEvent]);
 
   useEffect(() => {
     const trackAbandonIfNeeded = () => {
@@ -256,6 +253,21 @@ function useRegistrationFlowScreen() {
     const nextErrors = validateIdentityForm(identity, contact.referralCode);
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
+  };
+
+  const isDuplicateDniRegistrationError = (error: unknown) => {
+    const message =
+      error instanceof Error ? error.message : String(error ?? "");
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code?: unknown }).code ?? "")
+        : "";
+
+    return (
+      code === "409" ||
+      message.includes("(409)") ||
+      /dni ya complet[oó] su proceso de registro/i.test(message)
+    );
   };
 
   const applyDraftToState = (draft: RegistrationDraft) => {
@@ -329,19 +341,6 @@ function useRegistrationFlowScreen() {
       setNosis(null);
     }
 
-    if (draft.ineligibleReason === "PROVINCE_NOT_SALTA") {
-      setProvinceNotSaltaModalMessage(
-        "Solo se permiten registros con domicilio en la provincia de Salta.",
-      );
-    } else {
-      setProvinceNotSaltaModalMessage("");
-    }
-
-    if (draft.stage === "INELIGIBLE" || draft.isEligible === false) {
-      setStage("ineligible");
-      return;
-    }
-
     const completed = draft.lastCompletedStep ?? 0;
     if (draft.completedAt || completed >= 3) {
       setStage("complete");
@@ -394,6 +393,7 @@ function useRegistrationFlowScreen() {
 
   const handleIdentitySubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmittingIdentity) return;
     if (!validateIdentity()) return;
 
     if (!registrationSessionId) {
@@ -416,113 +416,107 @@ function useRegistrationFlowScreen() {
       return;
     }
 
+    setIsSubmittingIdentity(true);
     try {
-      const draftAfterIdentity = await patchRegistrationStep(
-        registrationSessionId,
-        "identity",
-        identityPayload,
-      );
-      if (
-        draftAfterIdentity?.ineligibleReason === "PROVINCE_NOT_SALTA" ||
-        (draftAfterIdentity?.stage === "INELIGIBLE" &&
-          draftAfterIdentity?.ineligibleReason === "PROVINCE_NOT_SALTA")
-      ) {
-        setProvinceNotSaltaModalMessage(
-          "Solo se permiten registros con domicilio en la provincia de Salta.",
+      try {
+        await patchRegistrationStep(
+          registrationSessionId,
+          "identity",
+          identityPayload,
         );
-        setStage("ineligible");
+      } catch (error) {
+        if (isDuplicateDniRegistrationError(error)) {
+          setErrors((prev) => {
+            const next = { ...prev };
+            delete next.identityApi;
+            next.dni =
+              "Este DNI ya tiene un registro finalizado. Si necesitás ayuda, contactate con soporte.";
+            return next;
+          });
+          return;
+        }
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo guardar identidad.";
+        setErrors((prev) => ({ ...prev, identityApi: message }));
         return;
       }
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo guardar identidad.";
-      const apiCode =
-        error && typeof error === "object" && "code" in error
-          ? String((error as { code?: unknown }).code ?? "")
-          : "";
-      if (
-        apiCode === "PROVINCE_NOT_SALTA" ||
-        message.includes("PROVINCE_NOT_SALTA")
-      ) {
-        setProvinceNotSaltaModalMessage(message);
+
+      nosisRequestId.current += 1;
+      const currentRequestId = nosisRequestId.current;
+      setStage("nosis");
+      setErrors({});
+
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      if (nosisRequestId.current !== currentRequestId) return;
+
+      let resultFromIdentity: RegistrationDraft | undefined;
+      try {
+        resultFromIdentity = await getRegistrationDraft(registrationSessionId);
+      } catch {
+        resultFromIdentity = undefined;
+      }
+
+      const safeFallbackGender: "" | "M" | "F" =
+        identity.genero === "M" || identity.genero === "F" ? identity.genero : "";
+      const nosisFromIdentity = resultFromIdentity
+        ? buildNosisFromDraft(resultFromIdentity, safeFallbackGender)
+        : null;
+      if (nosisFromIdentity) {
+        setNosis(nosisFromIdentity);
+        setProfile((prev) => ({
+          ...prev,
+          firstName: nosisFromIdentity.nombre,
+          lastName: nosisFromIdentity.apellido,
+          birthDate: nosisFromIdentity.fechaNacimiento,
+          dni: nosisFromIdentity.dni,
+          cuil: nosisFromIdentity.cuil.replace(/\D/g, ""),
+          gender: nosisFromIdentity.genero === "Masculino" ? "M" : "F",
+          provincia: nosisFromIdentity.provincia,
+          ciudad: nosisFromIdentity.ciudad,
+          direccion: nosisFromIdentity.direccion,
+        }));
+        setStage("prefill");
         return;
       }
-      setErrors((prev) => ({ ...prev, identityApi: message }));
-      return;
-    }
 
-    nosisRequestId.current += 1;
-    const currentRequestId = nosisRequestId.current;
-    setStage("nosis");
-    setErrors({});
-
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    if (nosisRequestId.current !== currentRequestId) return;
-
-    let resultFromIdentity: RegistrationDraft | undefined;
-    try {
-      resultFromIdentity = await getRegistrationDraft(registrationSessionId);
-    } catch {
-      resultFromIdentity = undefined;
-    }
-
-    const safeFallbackGender: "" | "M" | "F" =
-      identity.genero === "M" || identity.genero === "F" ? identity.genero : "";
-    const nosisFromIdentity = resultFromIdentity
-      ? buildNosisFromDraft(resultFromIdentity, safeFallbackGender)
-      : null;
-    if (nosisFromIdentity) {
-      setNosis(nosisFromIdentity);
+      const direccionCompuesta = [
+        resultFromIdentity?.addressStreetLocal ?? resultFromIdentity?.addressStreet,
+        resultFromIdentity?.addressNumberLocal ?? resultFromIdentity?.addressNumber,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      setNosis(null);
       setProfile((prev) => ({
         ...prev,
-        firstName: nosisFromIdentity.nombre,
-        lastName: nosisFromIdentity.apellido,
-        birthDate: nosisFromIdentity.fechaNacimiento,
-        dni: nosisFromIdentity.dni,
-        cuil: nosisFromIdentity.cuil.replace(/\D/g, ""),
-        gender: nosisFromIdentity.genero === "Masculino" ? "M" : "F",
-        provincia: nosisFromIdentity.provincia,
-        ciudad: nosisFromIdentity.ciudad,
-        direccion: nosisFromIdentity.direccion,
+        firstName: resultFromIdentity?.firstName ?? prev.firstName,
+        lastName: resultFromIdentity?.lastName ?? prev.lastName,
+        birthDate: resultFromIdentity?.birthDate
+          ? resultFromIdentity.birthDate.split("T")[0]
+          : prev.birthDate,
+        dni: resultFromIdentity?.dni ?? (identity.dni.trim() || prev.dni),
+        cuil: resultFromIdentity?.cuil ?? prev.cuil,
+        gender:
+          (resultFromIdentity?.gender === "M" || resultFromIdentity?.gender === "F"
+            ? resultFromIdentity.gender
+            : identity.genero === "M" || identity.genero === "F"
+              ? identity.genero
+              : prev.gender),
+        provincia:
+          resultFromIdentity?.provinceLocal ??
+          resultFromIdentity?.province ??
+          prev.provincia,
+        ciudad: resultFromIdentity?.cityLocal ?? resultFromIdentity?.city ?? prev.ciudad,
+        direccion: direccionCompuesta || prev.direccion,
       }));
+      setShowManualPrefillModal(true);
       setStage("prefill");
-      return;
+    } finally {
+      setIsSubmittingIdentity(false);
     }
-
-    const direccionCompuesta = [
-      resultFromIdentity?.addressStreetLocal ?? resultFromIdentity?.addressStreet,
-      resultFromIdentity?.addressNumberLocal ?? resultFromIdentity?.addressNumber,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-    setNosis(null);
-    setProfile((prev) => ({
-      ...prev,
-      firstName: resultFromIdentity?.firstName ?? prev.firstName,
-      lastName: resultFromIdentity?.lastName ?? prev.lastName,
-      birthDate: resultFromIdentity?.birthDate
-        ? resultFromIdentity.birthDate.split("T")[0]
-        : prev.birthDate,
-      dni: resultFromIdentity?.dni ?? (identity.dni.trim() || prev.dni),
-      cuil: resultFromIdentity?.cuil ?? prev.cuil,
-      gender:
-        (resultFromIdentity?.gender === "M" || resultFromIdentity?.gender === "F"
-          ? resultFromIdentity.gender
-          : identity.genero === "M" || identity.genero === "F"
-            ? identity.genero
-            : prev.gender),
-      provincia:
-        resultFromIdentity?.provinceLocal ??
-        resultFromIdentity?.province ??
-        prev.provincia,
-      ciudad: resultFromIdentity?.cityLocal ?? resultFromIdentity?.city ?? prev.ciudad,
-      direccion: direccionCompuesta || prev.direccion,
-    }));
-    setShowManualPrefillModal(true);
-    setStage("prefill");
   };
 
   const handleStartRegistration = async () => {
@@ -565,6 +559,7 @@ function useRegistrationFlowScreen() {
   };
   const handleContactSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmittingContact) return;
     if (!validateContact()) return;
     if (!registrationSessionId) {
       setErrors((prev) => ({
@@ -574,15 +569,27 @@ function useRegistrationFlowScreen() {
       return;
     }
 
+    setIsSubmittingContact(true);
     try {
-      const draftAfterAccount = await patchRegistrationStep(
-        registrationSessionId,
-        "account",
-        {
-          password: contact.password,
-          dni: identity.dni.trim(),
-        },
-      );
+      let draftAfterAccount: RegistrationDraft | undefined;
+      try {
+        draftAfterAccount = await patchRegistrationStep(
+          registrationSessionId,
+          "account",
+          {
+            password: contact.password,
+            dni: identity.dni.trim(),
+          },
+        );
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo guardar la cuenta.";
+        setErrors((prev) => ({ ...prev, accountApi: message }));
+        return;
+      }
+
       const isPendingReview =
         draftAfterAccount?.isEligible === false ||
         Boolean(draftAfterAccount?.ineligibleReason?.trim());
@@ -591,70 +598,66 @@ function useRegistrationFlowScreen() {
         setShowReviewPendingModal(true);
         return;
       }
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo guardar la cuenta.";
-      setErrors((prev) => ({ ...prev, accountApi: message }));
-      return;
-    }
 
-    completionRequestId.current += 1;
-    const currentRequestId = completionRequestId.current;
-    setErrors({});
-    setStage("creating");
-    await new Promise((resolve) => setTimeout(resolve, 1300));
-    if (completionRequestId.current !== currentRequestId) return;
-    setStage("complete");
-    const now = new Date();
-    const completedAtArgentina = new Intl.DateTimeFormat("es-AR", {
-      timeZone: "America/Argentina/Buenos_Aires",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    }).format(now);
-    const registrationPayload = {
-      event: "registration_completed",
-      sessionId: registrationSessionId || null,
-      completedSteps: 3,
-      completedAtArgentina,
-      timezone: "America/Argentina/Buenos_Aires",
-      sources: {
-        local: {
-          identity,
-          profile,
-          contact,
+      completionRequestId.current += 1;
+      const currentRequestId = completionRequestId.current;
+      setErrors({});
+      setStage("creating");
+      await new Promise((resolve) => setTimeout(resolve, 1300));
+      if (completionRequestId.current !== currentRequestId) return;
+      setStage("complete");
+      const now = new Date();
+      const completedAtArgentina = new Intl.DateTimeFormat("es-AR", {
+        timeZone: "America/Argentina/Buenos_Aires",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(now);
+      const registrationPayload = {
+        event: "registration_completed",
+        sessionId: registrationSessionId || null,
+        completedSteps: 3,
+        completedAtArgentina,
+        timezone: "America/Argentina/Buenos_Aires",
+        sources: {
+          local: {
+            identity,
+            profile,
+            contact,
+          },
+          nosis: nosis
+            ? {
+                nombre: nosis.nombre,
+                apellido: nosis.apellido,
+                dni: nosis.dni,
+                genero: nosis.genero,
+                fechaNacimiento: nosis.fechaNacimiento,
+                cuil: nosis.cuil,
+                direccion: nosis.direccion,
+                ciudad: nosis.ciudad,
+                provincia: nosis.provincia,
+                pep: nosis.pep,
+                repet: nosis.repet,
+                fallecido: nosis.fallecido,
+              }
+            : null,
         },
-        nosis: nosis
-          ? {
-              nombre: nosis.nombre,
-              apellido: nosis.apellido,
-              dni: nosis.dni,
-              genero: nosis.genero,
-              fechaNacimiento: nosis.fechaNacimiento,
-              cuil: nosis.cuil,
-              direccion: nosis.direccion,
-              ciudad: nosis.ciudad,
-              provincia: nosis.provincia,
-              pep: nosis.pep,
-              repet: nosis.repet,
-              fallecido: nosis.fallecido,
-            }
-          : null,
-      },
-    };
-    console.info("Proceso terminado: pasos 1, 2 y 3 completados.");
-    console.log(
-      "Payload de registro:\n" + JSON.stringify(registrationPayload, null, 2),
-    );
+      };
+      console.info("Proceso terminado: pasos 1, 2 y 3 completados.");
+      console.log(
+        "Payload de registro:\n" + JSON.stringify(registrationPayload, null, 2),
+      );
+    } finally {
+      setIsSubmittingContact(false);
+    }
   };
 
   const handlePrefillContinue = async () => {
+    if (isSubmittingPrefill) return;
     const requiresManualIdentityData = !nosis;
     const nextErrors = validatePrefillForm(profile, requiresManualIdentityData);
     if (Object.keys(nextErrors).length > 0) {
@@ -669,38 +672,6 @@ function useRegistrationFlowScreen() {
       return;
     }
 
-    let currentDraft: RegistrationDraft;
-    try {
-      currentDraft = await getRegistrationDraft(registrationSessionId);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo consultar el estado de la sesion.";
-      setErrors((prev) => ({ ...prev, confirmationApi: message }));
-      return;
-    }
-
-    if (currentDraft.isEligible === false) {
-      setErrors((prev) => ({
-        ...prev,
-        confirmationApi:
-          currentDraft.ineligibleReason ||
-          "El backend informó que la sesión no es elegible.",
-      }));
-      setStage("ineligible");
-      return;
-    }
-
-    if (currentDraft.isEligible !== true) {
-      setErrors((prev) => ({
-        ...prev,
-        confirmationApi:
-          "La sesión aún no está elegible en backend (isEligible pendiente). No se puede enviar Step 2.",
-      }));
-      return;
-    }
-
     const parsedAddress = parseAddress(profile.direccion);
     const parsedNosisAddress = parseAddress(nosis?.direccion ?? profile.direccion);
     const firstName = nosis ? nosis.nombre : profile.firstName.trim();
@@ -710,6 +681,7 @@ function useRegistrationFlowScreen() {
     const city = (nosis ? nosis.ciudad : profile.ciudad).trim();
     const province = (nosis ? nosis.provincia : profile.provincia).trim();
 
+    setIsSubmittingPrefill(true);
     try {
       await patchRegistrationStep(registrationSessionId, "confirmation", {
         firstName,
@@ -738,6 +710,8 @@ function useRegistrationFlowScreen() {
           ? error.message
           : "No se pudo guardar la confirmacion.";
       setErrors((prev) => ({ ...prev, confirmationApi: message }));
+    } finally {
+      setIsSubmittingPrefill(false);
     }
   };
 
@@ -752,6 +726,9 @@ function useRegistrationFlowScreen() {
     lastTrackedStageRef.current = null;
     setShowReviewPendingModal(false);
     setShowManualPrefillModal(false);
+    setIsSubmittingIdentity(false);
+    setIsSubmittingPrefill(false);
+    setIsSubmittingContact(false);
     dispatch({ type: "resetFlow" });
   };
 
@@ -761,6 +738,9 @@ function useRegistrationFlowScreen() {
     setErrors({});
     setShowReviewPendingModal(false);
     setShowManualPrefillModal(false);
+    setIsSubmittingIdentity(false);
+    setIsSubmittingPrefill(false);
+    setIsSubmittingContact(false);
 
     if (stage === "identity") {
       setStage("welcome");
@@ -825,6 +805,7 @@ function useRegistrationFlowScreen() {
                 identity={identity}
                 referralCode={contact.referralCode}
                 errors={errors}
+                isSubmitting={isSubmittingIdentity}
                 onSubmit={handleIdentitySubmit}
                 onIdentityChange={(nextIdentity) => setIdentity(nextIdentity)}
                 onReferralCodeChange={(value) =>
@@ -852,6 +833,7 @@ function useRegistrationFlowScreen() {
                 nosis={nosis}
                 profile={profile}
                 errors={errors}
+                isSubmitting={isSubmittingPrefill}
                 onFirstNameChange={(value) => {
                   setProfile((prev) => ({ ...prev, firstName: value }));
                   setErrors((prev) => {
@@ -968,6 +950,7 @@ function useRegistrationFlowScreen() {
               <ContactStep
                 contact={contact}
                 errors={errors}
+                isSubmitting={isSubmittingContact}
                 onSubmit={handleContactSubmit}
                 onPasswordChange={(value) => {
                   setContact((prev) => ({
@@ -1020,12 +1003,6 @@ function useRegistrationFlowScreen() {
               : TERMS_AND_CONDITIONS_TEXT
           }
           onClose={() => setLegalModal(null)}
-        />
-      ) : null}
-      {provinceNotSaltaModalMessage ? (
-        <ProvinceNotSaltaModal
-          message={provinceNotSaltaModalMessage}
-          onBackToStart={restartFlow}
         />
       ) : null}
       {showReviewPendingModal ? (

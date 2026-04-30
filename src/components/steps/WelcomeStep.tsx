@@ -6,6 +6,7 @@ import {
   primaryButton,
   TEXT_SECONDARY,
 } from "../../app/constants";
+import { LoadingButton } from "../LoadingButton";
 
 type WelcomeStepProps = {
   isCreatingSession: boolean;
@@ -141,15 +142,16 @@ export function WelcomeStep({
         </div>
       </div>
 
-      <button
+      <LoadingButton
         type="button"
         onClick={onStart}
         className="primary-cta"
-        disabled={isCreatingSession}
+        isLoading={isCreatingSession}
+        loadingLabel="Iniciando sesion..."
         style={primaryButton}
       >
-        {isCreatingSession ? "Iniciando sesion..." : "Comenzar registro"}
-      </button>
+        Comenzar registro
+      </LoadingButton>
       {registrationSessionError ? (
         <small
           style={{

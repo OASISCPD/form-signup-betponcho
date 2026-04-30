@@ -2,10 +2,12 @@ import { FormEvent, useState } from "react";
 import { ERROR_TEXT, inputBase, panelBase, primaryButton } from "../../app/constants";
 import type { ContactForm } from "../../app/types";
 import { isPasswordValid } from "../../app/formRules";
+import { LoadingButton } from "../LoadingButton";
 
 type ContactStepProps = {
   contact: ContactForm;
   errors: Record<string, string>;
+  isSubmitting: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> | void;
   onPasswordChange: (value: string) => void;
   onConfirmPasswordChange: (value: string) => void;
@@ -34,6 +36,7 @@ function EyeIcon({ crossed }: { crossed: boolean }) {
 export function ContactStep({
   contact,
   errors,
+  isSubmitting,
   onSubmit,
   onPasswordChange,
   onConfirmPasswordChange,
@@ -205,9 +208,15 @@ export function ContactStep({
         ) : null}
       </label>
 
-      <button type="submit" className="primary-cta" style={primaryButton}>
+      <LoadingButton
+        type="submit"
+        className="primary-cta"
+        style={primaryButton}
+        isLoading={isSubmitting}
+        loadingLabel="Creando cuenta..."
+      >
         Completar registro
-      </button>
+      </LoadingButton>
       {errors.accountApi ? <small style={{ color: ERROR_TEXT }}>{errors.accountApi}</small> : null}
     </form>
   );

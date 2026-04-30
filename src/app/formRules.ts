@@ -115,9 +115,6 @@ export function validatePrefillForm(
     if (profile.gender !== "M" && profile.gender !== "F") {
       nextErrors.gender = "Selecciona un genero";
     }
-    if (!/^salta$/i.test(profile.provincia.trim())) {
-      nextErrors.provincia = "Solo se puede registrar gente de Salta";
-    }
   }
   if (!profile.provincia.trim()) {
     nextErrors.provincia = "Ingresa una provincia";

@@ -1,5 +1,6 @@
 import { ERROR_TEXT, panelBase, primaryButton, selectBase } from "../../app/constants";
 import type { NosisData, ProfileForm } from "../../app/types";
+import { LoadingButton } from "../LoadingButton";
 import { EditablePrefillField } from "../fields/EditablePrefillField";
 import { ReadonlyField } from "../fields/ReadonlyField";
 
@@ -7,6 +8,7 @@ type PrefillStepProps = {
   nosis: NosisData | null;
   profile: ProfileForm;
   errors: Record<string, string>;
+  isSubmitting: boolean;
   onFirstNameChange: (value: string) => void;
   onLastNameChange: (value: string) => void;
   onBirthDateChange: (value: string) => void;
@@ -26,6 +28,7 @@ export function PrefillStep({
   nosis,
   profile,
   errors,
+  isSubmitting,
   onFirstNameChange,
   onLastNameChange,
   onBirthDateChange,
@@ -307,9 +310,16 @@ export function PrefillStep({
           </label>
         </div>
       </div>
-      <button type="button" onClick={onContinue} className="primary-cta" style={primaryButton}>
+      <LoadingButton
+        type="button"
+        onClick={onContinue}
+        className="primary-cta"
+        style={primaryButton}
+        isLoading={isSubmitting}
+        loadingLabel="Guardando datos..."
+      >
         Continuar con datos de contacto
-      </button>
+      </LoadingButton>
       {errors.confirmationApi ? (
         <small style={{ color: ERROR_TEXT }}>{errors.confirmationApi}</small>
       ) : null}

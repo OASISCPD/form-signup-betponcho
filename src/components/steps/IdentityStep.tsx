@@ -11,11 +11,13 @@ import {
   TEXT_SECONDARY,
 } from "../../app/constants";
 import type { IdentityForm } from "../../app/types";
+import { LoadingButton } from "../LoadingButton";
 
 type IdentityStepProps = {
   identity: IdentityForm;
   referralCode: string;
   errors: Record<string, string>;
+  isSubmitting: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> | void;
   onIdentityChange: (value: IdentityForm) => void;
   onReferralCodeChange: (value: string) => void;
@@ -27,12 +29,16 @@ export function IdentityStep({
   identity,
   referralCode,
   errors,
+  isSubmitting,
   onSubmit,
   onIdentityChange,
   onReferralCodeChange,
   onOpenLegal,
   onClearErrors,
 }: IdentityStepProps) {
+  const hasCompletedRegistrationDniError =
+    errors.dni ===
+    "Este DNI ya tiene un registro finalizado. Si necesitás ayuda, contactate con soporte.";
   const confirmEmailHasValue = identity.confirmEmail.trim().length > 0;
   const emailsMatch =
     confirmEmailHasValue && identity.confirmEmail.trim() === identity.email.trim();
@@ -53,9 +59,10 @@ export function IdentityStep({
         <span>DNI</span>
         <input
           value={identity.dni}
-          onChange={(e) =>
-            onIdentityChange({ ...identity, dni: e.target.value.replace(/\D/g, "") })
-          }
+          onChange={(e) => {
+            onIdentityChange({ ...identity, dni: e.target.value.replace(/\D/g, "") });
+            onClearErrors("dni", "identityApi");
+          }}
           inputMode="numeric"
           maxLength={8}
           style={inputBase}
@@ -297,9 +304,16 @@ export function IdentityStep({
         ) : null}
       </label>
 
-      <button type="submit" className="primary-cta" style={primaryButton}>
+      <LoadingButton
+        type="submit"
+        className="primary-cta"
+        style={primaryButton}
+        isLoading={isSubmitting}
+        disabled={hasCompletedRegistrationDniError}
+        loadingLabel="Verificando..."
+      >
         Verificar
-      </button>
+      </LoadingButton>
       {errors.identityApi ? (
         <small style={{ color: ERROR_TEXT }}>{errors.identityApi}</small>
       ) : null}

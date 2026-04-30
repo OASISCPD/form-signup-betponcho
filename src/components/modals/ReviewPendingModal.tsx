@@ -31,7 +31,8 @@ export function ReviewPendingModal({ onProceed }: ReviewPendingModalProps) {
         </h3>
         <p id={descriptionId} className="review-pending-text">
           Tu registro quedo sujeto a revision. Este proceso puede demorar hasta
-          72 horas. Te avisaremos por email cuando este listo.
+          72 horas. Te avisaremos por email cuando este listo para que puedas
+          comenzar a jugar.
         </p>
         <button
           ref={proceedButtonRef}
