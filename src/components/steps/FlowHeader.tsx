@@ -1,5 +1,5 @@
 import { FaArrowLeftLong } from "react-icons/fa6";
-import { NAVBAR_RED, panelBase, secondaryButton, TEXT_PRIMARY, TEXT_SECONDARY } from "../../app/constants";
+import { panelBase, secondaryButton, TEXT_PRIMARY, TEXT_SECONDARY } from "../../app/constants";
 import type { Stage } from "../../app/types";
 
 const progressStepBadgeBaseStyle: React.CSSProperties = {
@@ -22,14 +22,16 @@ type FlowHeaderProps = {
 };
 
 export function FlowHeader({ stage, step, onBack }: FlowHeaderProps) {
+  const currentStep = Math.max(1, Math.min(3, step));
+
   return (
     <>
-      <button type="button" onClick={onBack} style={{ ...secondaryButton, marginBottom: 14 }}>
+      <button type="button" onClick={onBack} style={{ ...secondaryButton, marginBottom: 16 }}>
         <FaArrowLeftLong size={14} />
         Volver
       </button>
 
-      <header style={{ textAlign: "center", marginBottom: 24 }}>
+      <header style={{ textAlign: "center", marginBottom: 16 }}>
         <h1
           className="font-display"
           style={{
@@ -52,7 +54,7 @@ export function FlowHeader({ stage, step, onBack }: FlowHeaderProps) {
             textTransform: "uppercase",
           }}
         >
-          Paso {step} de 3
+          Paso {currentStep} de 3
         </p>
       </header>
 
@@ -61,7 +63,7 @@ export function FlowHeader({ stage, step, onBack }: FlowHeaderProps) {
           display: "grid",
           gridTemplateColumns: "repeat(3,1fr)",
           gap: 12,
-          marginBottom: 24,
+          marginBottom: 20,
           ...panelBase,
         }}
       >
@@ -72,12 +74,21 @@ export function FlowHeader({ stage, step, onBack }: FlowHeaderProps) {
           const progressStepBadgeStyle: React.CSSProperties = {
             ...progressStepBadgeBaseStyle,
             background: done
-              ? "#14a44d"
+              ? "linear-gradient(160deg, rgba(124, 18, 18, 0.9) 0%, rgba(84, 8, 8, 0.95) 100%)"
               : active
-                ? NAVBAR_RED
+                ? "linear-gradient(160deg, rgba(232, 66, 66, 0.98) 0%, rgba(152, 0, 0, 1) 100%)"
                 : "rgba(255,255,255,0.14)",
-            transform: active ? "translateY(-1px)" : "translateY(0)",
-            boxShadow: active ? "0 10px 20px -16px rgba(232,66,66,0.95)" : "none",
+            border: active
+              ? "1px solid rgba(255, 198, 198, 0.72)"
+              : done
+                ? "1px solid rgba(255, 124, 124, 0.34)"
+                : "1px solid rgba(255,255,255,0.18)",
+            transform: active ? "translateY(-2px) scale(1.04)" : "translateY(0)",
+            boxShadow: active
+              ? "0 16px 28px -18px rgba(232,66,66,1)"
+              : done
+                ? "0 8px 18px -18px rgba(152,0,0,0.82)"
+                : "none",
           };
           return (
             <div key={label} style={{ textAlign: "center" }}>
@@ -86,10 +97,14 @@ export function FlowHeader({ stage, step, onBack }: FlowHeaderProps) {
                 style={{
                   display: "block",
                   marginTop: 8,
-                  opacity: active ? 1 : 0.8,
+                  opacity: active ? 1 : done ? 0.86 : 0.74,
                   letterSpacing: "0.04em",
                   transition: "opacity 180ms ease, color 180ms ease",
-                  color: active ? "rgba(255,255,255,0.98)" : "rgba(255,255,255,0.8)",
+                  color: active
+                    ? "rgba(255,255,255,0.98)"
+                    : done
+                      ? "rgba(255,232,232,0.88)"
+                      : "rgba(255,255,255,0.76)",
                 }}
               >
                 {label}

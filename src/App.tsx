@@ -4,6 +4,7 @@
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import "react-phone-input-2/lib/style.css";
 import {
@@ -17,7 +18,6 @@ import {
   Stage,
   UtmPayload,
 } from "./app/types";
-import { evaluateNosis } from "./app/mockNosis";
 import { useFlowState } from "./app/useFlowState";
 import {
   createRegistrationSession,
@@ -35,7 +35,9 @@ import {
   validatePrefillForm,
 } from "./app/formRules";
 import { LegalModal } from "./components/modals/LegalModal";
+import { ManualPrefillModal } from "./components/modals/ManualPrefillModal";
 import { ProvinceNotSaltaModal } from "./components/modals/ProvinceNotSaltaModal";
+import { ReviewPendingModal } from "./components/modals/ReviewPendingModal";
 import { ContactStep } from "./components/steps/ContactStep";
 import { FlowHeader } from "./components/steps/FlowHeader";
 import { IdentityStep } from "./components/steps/IdentityStep";
@@ -114,6 +116,8 @@ function useRegistrationFlowScreen() {
   const hasTrackedIneligibleRef = useRef(false);
   const hasTrackedAbandonRef = useRef(false);
   const lastTrackedStageRef = useRef<Stage | null>(null);
+  const [showReviewPendingModal, setShowReviewPendingModal] = useState(false);
+  const [showManualPrefillModal, setShowManualPrefillModal] = useState(false);
 
   const step = useMemo(() => {
     if (stage === "welcome") return 0;
@@ -292,6 +296,12 @@ function useRegistrationFlowScreen() {
 
     setProfile((prev) => ({
       ...prev,
+      firstName: draft.firstName ?? prev.firstName,
+      lastName: draft.lastName ?? prev.lastName,
+      birthDate: draft.birthDate ? draft.birthDate.split("T")[0] : prev.birthDate,
+      dni: draft.dni ?? prev.dni,
+      cuil: draft.cuil ?? prev.cuil,
+      gender: genero || prev.gender,
       provincia: draft.provinceLocal ?? draft.province ?? prev.provincia,
       ciudad: draft.cityLocal ?? draft.city ?? prev.ciudad,
       direccion: direccionCompuestaLocal || direccionCompuesta || prev.direccion,
@@ -315,8 +325,6 @@ function useRegistrationFlowScreen() {
     const nosisFromDraft = buildNosisFromDraft(draft, genero);
     if (nosisFromDraft) {
       setNosis(nosisFromDraft);
-    } else if (draft.dni && genero) {
-      setNosis(evaluateNosis(draft.dni, genero));
     } else {
       setNosis(null);
     }
@@ -469,6 +477,12 @@ function useRegistrationFlowScreen() {
       setNosis(nosisFromIdentity);
       setProfile((prev) => ({
         ...prev,
+        firstName: nosisFromIdentity.nombre,
+        lastName: nosisFromIdentity.apellido,
+        birthDate: nosisFromIdentity.fechaNacimiento,
+        dni: nosisFromIdentity.dni,
+        cuil: nosisFromIdentity.cuil.replace(/\D/g, ""),
+        gender: nosisFromIdentity.genero === "Masculino" ? "M" : "F",
         provincia: nosisFromIdentity.provincia,
         ciudad: nosisFromIdentity.ciudad,
         direccion: nosisFromIdentity.direccion,
@@ -477,24 +491,37 @@ function useRegistrationFlowScreen() {
       return;
     }
 
-    const result = evaluateNosis(identity.dni, identity.genero);
-    const bornDate = new Date(result.fechaNacimiento);
-    const years = new Date().getFullYear() - bornDate.getFullYear();
-    const meetsAge = years >= 18;
-    const meetsCompliance = !result.pep && !result.repet && !result.fallecido;
-
-    if (!meetsAge || !meetsCompliance) {
-      setStage("ineligible");
-      return;
-    }
-
-    setNosis(result);
+    const direccionCompuesta = [
+      resultFromIdentity?.addressStreetLocal ?? resultFromIdentity?.addressStreet,
+      resultFromIdentity?.addressNumberLocal ?? resultFromIdentity?.addressNumber,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    setNosis(null);
     setProfile((prev) => ({
       ...prev,
-      provincia: result.provincia,
-      ciudad: result.ciudad,
-      direccion: result.direccion,
+      firstName: resultFromIdentity?.firstName ?? prev.firstName,
+      lastName: resultFromIdentity?.lastName ?? prev.lastName,
+      birthDate: resultFromIdentity?.birthDate
+        ? resultFromIdentity.birthDate.split("T")[0]
+        : prev.birthDate,
+      dni: resultFromIdentity?.dni ?? (identity.dni.trim() || prev.dni),
+      cuil: resultFromIdentity?.cuil ?? prev.cuil,
+      gender:
+        (resultFromIdentity?.gender === "M" || resultFromIdentity?.gender === "F"
+          ? resultFromIdentity.gender
+          : identity.genero === "M" || identity.genero === "F"
+            ? identity.genero
+            : prev.gender),
+      provincia:
+        resultFromIdentity?.provinceLocal ??
+        resultFromIdentity?.province ??
+        prev.provincia,
+      ciudad: resultFromIdentity?.cityLocal ?? resultFromIdentity?.city ?? prev.ciudad,
+      direccion: direccionCompuesta || prev.direccion,
     }));
+    setShowManualPrefillModal(true);
     setStage("prefill");
   };
 
@@ -548,10 +575,22 @@ function useRegistrationFlowScreen() {
     }
 
     try {
-      await patchRegistrationStep(registrationSessionId, "account", {
-        password: contact.password,
-        referredCode: contact.referralCode.trim() || undefined,
-      });
+      const draftAfterAccount = await patchRegistrationStep(
+        registrationSessionId,
+        "account",
+        {
+          password: contact.password,
+          dni: identity.dni.trim(),
+        },
+      );
+      const isPendingReview =
+        draftAfterAccount?.isEligible === false ||
+        Boolean(draftAfterAccount?.ineligibleReason?.trim());
+      if (isPendingReview) {
+        setErrors({});
+        setShowReviewPendingModal(true);
+        return;
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -616,16 +655,16 @@ function useRegistrationFlowScreen() {
   };
 
   const handlePrefillContinue = async () => {
-    const nextErrors = validatePrefillForm(profile);
+    const requiresManualIdentityData = !nosis;
+    const nextErrors = validatePrefillForm(profile, requiresManualIdentityData);
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
     }
-    if (!registrationSessionId || !nosis) {
+    if (!registrationSessionId) {
       setErrors((prev) => ({
         ...prev,
-        confirmationApi:
-          "Falta session activa o datos personales para confirmar.",
+        confirmationApi: "Falta session activa para confirmar.",
       }));
       return;
     }
@@ -663,18 +702,25 @@ function useRegistrationFlowScreen() {
     }
 
     const parsedAddress = parseAddress(profile.direccion);
-    const parsedNosisAddress = parseAddress(nosis.direccion);
+    const parsedNosisAddress = parseAddress(nosis?.direccion ?? profile.direccion);
+    const firstName = nosis ? nosis.nombre : profile.firstName.trim();
+    const lastName = nosis ? nosis.apellido : profile.lastName.trim();
+    const birthDate = nosis ? nosis.fechaNacimiento : profile.birthDate.trim();
+    const cuil = (nosis ? nosis.cuil : profile.cuil).replace(/\D/g, "");
+    const city = (nosis ? nosis.ciudad : profile.ciudad).trim();
+    const province = (nosis ? nosis.provincia : profile.provincia).trim();
+
     try {
       await patchRegistrationStep(registrationSessionId, "confirmation", {
-        firstName: nosis.nombre,
-        lastName: nosis.apellido,
-        birthDate: nosis.fechaNacimiento,
-        cuil: nosis.cuil.replace(/\D/g, ""),
+        firstName,
+        lastName,
+        birthDate,
+        cuil,
         addressStreet: parsedNosisAddress.addressStreet,
         addressNumber:
           parsedNosisAddress.addressNumber.replace(/\D/g, "") || "0",
-        city: nosis.ciudad.trim(),
-        province: nosis.provincia.trim(),
+        city,
+        province,
         addressStreetLocal: parsedAddress.addressStreet,
         addressNumberLocal: parsedAddress.addressNumber.replace(/\D/g, "") || "0",
         cityLocal: profile.ciudad.trim(),
@@ -704,6 +750,8 @@ function useRegistrationFlowScreen() {
     hasTrackedIneligibleRef.current = false;
     hasTrackedAbandonRef.current = false;
     lastTrackedStageRef.current = null;
+    setShowReviewPendingModal(false);
+    setShowManualPrefillModal(false);
     dispatch({ type: "resetFlow" });
   };
 
@@ -711,6 +759,8 @@ function useRegistrationFlowScreen() {
     nosisRequestId.current += 1;
     completionRequestId.current += 1;
     setErrors({});
+    setShowReviewPendingModal(false);
+    setShowManualPrefillModal(false);
 
     if (stage === "identity") {
       setStage("welcome");
@@ -797,11 +847,65 @@ function useRegistrationFlowScreen() {
               />
             )}
 
-            {stage === "prefill" && nosis && (
+            {stage === "prefill" && (
               <PrefillStep
                 nosis={nosis}
                 profile={profile}
                 errors={errors}
+                onFirstNameChange={(value) => {
+                  setProfile((prev) => ({ ...prev, firstName: value }));
+                  setErrors((prev) => {
+                    if (!prev.firstName) return prev;
+                    const next = { ...prev };
+                    delete next.firstName;
+                    return next;
+                  });
+                }}
+                onLastNameChange={(value) => {
+                  setProfile((prev) => ({ ...prev, lastName: value }));
+                  setErrors((prev) => {
+                    if (!prev.lastName) return prev;
+                    const next = { ...prev };
+                    delete next.lastName;
+                    return next;
+                  });
+                }}
+                onBirthDateChange={(value) => {
+                  setProfile((prev) => ({ ...prev, birthDate: value }));
+                  setErrors((prev) => {
+                    if (!prev.birthDate) return prev;
+                    const next = { ...prev };
+                    delete next.birthDate;
+                    return next;
+                  });
+                }}
+                onDniChange={(value) => {
+                  setProfile((prev) => ({ ...prev, dni: value.replace(/\D/g, "") }));
+                  setErrors((prev) => {
+                    if (!prev.dni) return prev;
+                    const next = { ...prev };
+                    delete next.dni;
+                    return next;
+                  });
+                }}
+                onCuilChange={(value) => {
+                  setProfile((prev) => ({ ...prev, cuil: value.replace(/\D/g, "") }));
+                  setErrors((prev) => {
+                    if (!prev.cuil) return prev;
+                    const next = { ...prev };
+                    delete next.cuil;
+                    return next;
+                  });
+                }}
+                onGenderChange={(value) => {
+                  setProfile((prev) => ({ ...prev, gender: value }));
+                  setErrors((prev) => {
+                    if (!prev.gender) return prev;
+                    const next = { ...prev };
+                    delete next.gender;
+                    return next;
+                  });
+                }}
                 onDireccionChange={(value) => {
                   setProfile((prev) => ({ ...prev, direccion: value }));
                   setErrors((prev) => {
@@ -923,6 +1027,17 @@ function useRegistrationFlowScreen() {
           message={provinceNotSaltaModalMessage}
           onBackToStart={restartFlow}
         />
+      ) : null}
+      {showReviewPendingModal ? (
+        <ReviewPendingModal
+          onProceed={() => {
+            trackEvent("review_pending_redirect", { stage, step_index: step });
+            window.location.assign("https://betponcho.bet.ar/");
+          }}
+        />
+      ) : null}
+      {showManualPrefillModal ? (
+        <ManualPrefillModal onClose={() => setShowManualPrefillModal(false)} />
       ) : null}
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </main>

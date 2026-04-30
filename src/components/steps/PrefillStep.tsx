@@ -3,20 +3,16 @@ import type { NosisData, ProfileForm } from "../../app/types";
 import { EditablePrefillField } from "../fields/EditablePrefillField";
 import { ReadonlyField } from "../fields/ReadonlyField";
 
-const pepFieldsetBaseStyle: React.CSSProperties = {
-  margin: 0,
-  padding: "10px 12px",
-  borderRadius: 12,
-  display: "grid",
-  gap: 8,
-  width: "100%",
-  maxWidth: 240,
-};
-
 type PrefillStepProps = {
-  nosis: NosisData;
+  nosis: NosisData | null;
   profile: ProfileForm;
   errors: Record<string, string>;
+  onFirstNameChange: (value: string) => void;
+  onLastNameChange: (value: string) => void;
+  onBirthDateChange: (value: string) => void;
+  onDniChange: (value: string) => void;
+  onCuilChange: (value: string) => void;
+  onGenderChange: (value: ProfileForm["gender"]) => void;
   onDireccionChange: (value: string) => void;
   onCiudadChange: (value: string) => void;
   onProvinciaChange: (value: string) => void;
@@ -30,6 +26,12 @@ export function PrefillStep({
   nosis,
   profile,
   errors,
+  onFirstNameChange,
+  onLastNameChange,
+  onBirthDateChange,
+  onDniChange,
+  onCuilChange,
+  onGenderChange,
   onDireccionChange,
   onCiudadChange,
   onProvinciaChange,
@@ -38,55 +40,138 @@ export function PrefillStep({
   onOcupacionChange,
   onContinue,
 }: PrefillStepProps) {
+  const isManualMode = !nosis;
+
   return (
-    <div style={{ display: "grid", gap: 14 }}>
+    <div style={{ display: "grid", gap: 16 }}>
       <h2 className="font-display" style={{ margin: 0, fontSize: 34 }}>
         Confirmar datos
       </h2>
       <div
         style={{
           borderRadius: 16,
-          border: "1px solid rgba(150, 176, 224, 0.34)",
-          background: "rgba(255,255,255,0.06)",
-          padding: 14,
+          border: isManualMode
+            ? "1px solid rgba(236, 106, 106, 0.55)"
+            : "1px solid rgba(140, 176, 232, 0.58)",
+          background: isManualMode
+            ? "linear-gradient(165deg, rgba(62, 25, 35, 0.65) 0%, rgba(33, 23, 40, 0.68) 100%)"
+            : "linear-gradient(165deg, rgba(30, 43, 68, 0.64) 0%, rgba(20, 30, 52, 0.7) 100%)",
+          padding: 16,
           display: "grid",
-          gap: 10,
+          gap: 12,
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gap: 10,
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          }}
-        >
-          <ReadonlyField label="Nombre" value={nosis.nombre} />
-          <ReadonlyField label="Apellido" value={nosis.apellido} />
-          <ReadonlyField label="Fecha nacimiento" value={nosis.fechaNacimiento} />
-          <ReadonlyField label="DNI" value={nosis.dni} />
-          <ReadonlyField label="CUIL/CUIT" value={nosis.cuil} />
-          <ReadonlyField label="Género" value={nosis.genero} />
-        </div>
+        {isManualMode ? (
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            }}
+          >
+            <EditablePrefillField
+              label="Nombre"
+              value={profile.firstName}
+              placeholder="Ej: Juan"
+              error={errors.firstName}
+              onChange={onFirstNameChange}
+            />
+            <EditablePrefillField
+              label="Apellido"
+              value={profile.lastName}
+              placeholder="Ej: Perez"
+              error={errors.lastName}
+              onChange={onLastNameChange}
+            />
+            <EditablePrefillField
+              label="Fecha nacimiento"
+              value={profile.birthDate}
+              placeholder=""
+              type="date"
+              error={errors.birthDate}
+              onChange={onBirthDateChange}
+            />
+            <EditablePrefillField
+              label="DNI"
+              value={profile.dni}
+              placeholder="Ej: 12345678"
+              inputMode="numeric"
+              maxLength={8}
+              error={errors.dni}
+              onChange={onDniChange}
+            />
+            <EditablePrefillField
+              label="CUIL/CUIT"
+              value={profile.cuil}
+              placeholder="Ej: 20123456789"
+              inputMode="numeric"
+              maxLength={11}
+              error={errors.cuil}
+              onChange={onCuilChange}
+            />
+            <label style={{ display: "grid", gap: 8 }}>
+              <span>Genero</span>
+              <select
+                value={profile.gender}
+                onChange={(e) => onGenderChange(e.target.value as ProfileForm["gender"])}
+                style={{
+                  ...selectBase,
+                  border: errors.gender
+                    ? "1px solid rgba(255, 110, 110, 0.85)"
+                    : "1px solid rgba(236, 106, 106, 0.45)",
+                }}
+              >
+                <option value="" style={{ color: "#111", background: "#fff" }}>
+                  Seleccionar
+                </option>
+                <option value="M" style={{ color: "#111", background: "#fff" }}>
+                  Masculino
+                </option>
+                <option value="F" style={{ color: "#111", background: "#fff" }}>
+                  Femenino
+                </option>
+              </select>
+              {errors.gender ? <small style={{ color: ERROR_TEXT }}>{errors.gender}</small> : null}
+            </label>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gap: 12,
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            }}
+          >
+            <ReadonlyField label="Nombre" value={nosis.nombre} />
+            <ReadonlyField label="Apellido" value={nosis.apellido} />
+            <ReadonlyField label="Fecha nacimiento" value={nosis.fechaNacimiento} />
+            <ReadonlyField label="DNI" value={nosis.dni} />
+            <ReadonlyField label="CUIL/CUIT" value={nosis.cuil} />
+            <ReadonlyField label="Genero" value={nosis.genero} />
+          </div>
+        )}
       </div>
 
       <div
         style={{
           ...panelBase,
-          padding: 14,
+          padding: 16,
           display: "grid",
-          gap: 10,
-          border: "1px solid rgba(236, 106, 106, 0.34)",
+          gap: 12,
+          border: "1px solid rgba(236, 106, 106, 0.55)",
+          background:
+            "linear-gradient(165deg, rgba(64, 24, 35, 0.68) 0%, rgba(28, 25, 44, 0.72) 100%)",
         }}
       >
         <div
           style={{
             display: "grid",
-            gap: 10,
+            gap: 12,
             gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           }}
         >
           <EditablePrefillField
-            label="Dirección"
+            label="Direccion"
             value={profile.direccion}
             placeholder="Ej: Av. Lopez 143"
             error={errors.direccion}
@@ -107,49 +192,40 @@ export function PrefillStep({
             onChange={onProvinciaChange}
           />
           <div style={{ display: "grid", gap: 8 }}>
-            <fieldset
-              style={{
-                ...pepFieldsetBaseStyle,
-                border: errors.pep
-                  ? "1px solid rgba(255, 110, 110, 0.85)"
-                  : "1px solid rgba(236, 106, 106, 0.45)",
-              }}
-            >
-              <legend style={{ padding: "0 6px", fontSize: 14 }}>
-                Persona Expuesta Politicamente (PEP)
-              </legend>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <label
-                  className={`pep-radio-chip ${profile.pep === "Si" ? "pep-radio-chip-active" : ""}`}
-                  style={{ cursor: "pointer" }}
-                >
-                  <input
-                    className="pep-radio-input"
-                    type="radio"
-                    name="pep"
-                    value="Si"
-                    checked={profile.pep === "Si"}
-                    onChange={(e) => onPepChange(e.target.value as ProfileForm["pep"])}
-                  />
-                  <span>Si</span>
-                </label>
-                <label
-                  className={`pep-radio-chip ${profile.pep === "No" ? "pep-radio-chip-active" : ""}`}
-                  style={{ cursor: "pointer" }}
-                >
-                  <input
-                    className="pep-radio-input"
-                    type="radio"
-                    name="pep"
-                    value="No"
-                    checked={profile.pep === "No"}
-                    onChange={(e) => onPepChange(e.target.value as ProfileForm["pep"])}
-                  />
-                  <span>No</span>
-                </label>
-              </div>
-              {errors.pep ? <small style={{ color: ERROR_TEXT }}>{errors.pep}</small> : null}
-            </fieldset>
+            <small className="editable-prefill-caption">
+              Persona Expuesta Politicamente (PEP)
+            </small>
+            <div className={`pep-selector-group ${errors.pep ? "pep-selector-group-error" : ""}`}>
+              <label
+                className={`pep-radio-chip pep-selector-chip ${profile.pep === "Si" ? "pep-radio-chip-active" : ""}`}
+                style={{ cursor: "pointer" }}
+              >
+                <input
+                  className="pep-radio-input"
+                  type="radio"
+                  name="pep"
+                  value="Si"
+                  checked={profile.pep === "Si"}
+                  onChange={(e) => onPepChange(e.target.value as ProfileForm["pep"])}
+                />
+                <span>Si</span>
+              </label>
+              <label
+                className={`pep-radio-chip pep-selector-chip ${profile.pep === "No" ? "pep-radio-chip-active" : ""}`}
+                style={{ cursor: "pointer" }}
+              >
+                <input
+                  className="pep-radio-input"
+                  type="radio"
+                  name="pep"
+                  value="No"
+                  checked={profile.pep === "No"}
+                  onChange={(e) => onPepChange(e.target.value as ProfileForm["pep"])}
+                />
+                <span>No</span>
+              </label>
+            </div>
+            {errors.pep ? <small style={{ color: ERROR_TEXT }}>{errors.pep}</small> : null}
           </div>
         </div>
       </div>
@@ -157,10 +233,12 @@ export function PrefillStep({
       <div
         style={{
           ...panelBase,
-          padding: 14,
+          padding: 16,
           display: "grid",
-          gap: 10,
-          border: "1px solid rgba(236, 106, 106, 0.34)",
+          gap: 12,
+          border: "1px solid rgba(236, 106, 106, 0.55)",
+          background:
+            "linear-gradient(165deg, rgba(64, 24, 35, 0.68) 0%, rgba(28, 25, 44, 0.72) 100%)",
         }}
       >
         <div

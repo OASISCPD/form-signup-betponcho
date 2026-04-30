@@ -52,7 +52,6 @@ export const primaryButton: CSSProperties = {
   background: CTA_GRADIENT,
   color: "#fff",
   fontWeight: 700,
-  cursor: "pointer",
   padding: "14px 16px",
   border: "1px solid rgba(255, 164, 164, 0.35)",
   boxShadow:

@@ -52,6 +52,12 @@ const EMPTY_CONTACT: ContactForm = {
 };
 
 const EMPTY_PROFILE: ProfileForm = {
+  firstName: "",
+  lastName: "",
+  birthDate: "",
+  dni: "",
+  cuil: "",
+  gender: "",
   estadoCivil: "",
   ocupacion: "",
   pep: "",

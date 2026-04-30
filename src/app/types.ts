@@ -24,6 +24,12 @@ export type ContactForm = {
 };
 
 export type ProfileForm = {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  dni: string;
+  cuil: string;
+  gender: string;
   estadoCivil: "" | "Casado" | "Soltero" | "Viudo" | "Union Civil";
   ocupacion: "" | "Industria" | "Comercio" | "Profesional";
   pep: "" | "Si" | "No";

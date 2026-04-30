@@ -1,4 +1,4 @@
-import { panelBase, secondaryButton } from "../../app/constants";
+import { panelBase, primaryButton, secondaryButton } from "../../app/constants";
 
 const completeCheckIconStyle: React.CSSProperties = {
   width: 58,
@@ -147,7 +147,8 @@ export function CompleteStep() {
         onClick={() => {
           window.location.href = "https://betponcho.bet.ar/";
         }}
-        style={secondaryButton}
+        className="primary-cta"
+        style={{ ...primaryButton, width: "auto", minWidth: 220, justifySelf: "center" }}
       >
         Ir a BetPoncho
       </button>

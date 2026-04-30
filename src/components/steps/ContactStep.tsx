@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import { ERROR_TEXT, inputBase, panelBase, primaryButton } from "../../app/constants";
 import type { ContactForm } from "../../app/types";
 import { isPasswordValid } from "../../app/formRules";
@@ -11,6 +11,26 @@ type ContactStepProps = {
   onConfirmPasswordChange: (value: string) => void;
 };
 
+function EyeIcon({ crossed }: { crossed: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+      {crossed ? <path d="M3 3l18 18" /> : null}
+    </svg>
+  );
+}
+
 export function ContactStep({
   contact,
   errors,
@@ -18,6 +38,9 @@ export function ContactStep({
   onPasswordChange,
   onConfirmPasswordChange,
 }: ContactStepProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const passwordConditionsOk = isPasswordValid(contact.password);
   const confirmPasswordHasValue = contact.confirmPassword.length > 0;
   const confirmPasswordMatches =
@@ -25,24 +48,52 @@ export function ContactStep({
   const confirmPasswordMismatch =
     confirmPasswordHasValue && contact.confirmPassword !== contact.password;
 
+  const iconButtonStyle: React.CSSProperties = {
+    position: "absolute",
+    right: 10,
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: 28,
+    height: 28,
+    display: "grid",
+    placeItems: "center",
+    borderRadius: 8,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(255,255,255,0.08)",
+    color: "rgba(255,255,255,0.88)",
+    cursor: "pointer",
+    padding: 0,
+  };
+
   return (
     <form onSubmit={onSubmit} style={{ display: "grid", gap: 14, ...panelBase }}>
       <label style={{ display: "grid", gap: 8 }}>
         <span>Contraseña</span>
-        <input
-          value={contact.password}
-          onChange={(e) => onPasswordChange(e.target.value)}
-          type="password"
-          style={{
-            ...inputBase,
-            border: errors.password
-              ? "1px solid rgba(255, 110, 110, 0.85)"
-              : passwordConditionsOk
-                ? "1px solid rgba(35, 214, 120, 0.7)"
-                : inputBase.border,
-          }}
-          placeholder="********"
-        />
+        <div style={{ position: "relative" }}>
+          <input
+            value={contact.password}
+            onChange={(e) => onPasswordChange(e.target.value)}
+            type={showPassword ? "text" : "password"}
+            style={{
+              ...inputBase,
+              paddingRight: 46,
+              border: errors.password
+                ? "1px solid rgba(255, 110, 110, 0.85)"
+                : passwordConditionsOk
+                  ? "1px solid rgba(35, 214, 120, 0.7)"
+                  : inputBase.border,
+            }}
+            placeholder="********"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            style={iconButtonStyle}
+            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+          >
+            <EyeIcon crossed={showPassword} />
+          </button>
+        </div>
         {errors.password ? <small style={{ color: ERROR_TEXT }}>{errors.password}</small> : null}
       </label>
 
@@ -114,22 +165,37 @@ export function ContactStep({
 
       <label style={{ display: "grid", gap: 8 }}>
         <span>Confirmar contraseña</span>
-        <input
-          value={contact.confirmPassword}
-          onChange={(e) => onConfirmPasswordChange(e.target.value)}
-          type="password"
-          style={{
-            ...inputBase,
-            border: errors.confirmPassword
-              ? "1px solid rgba(255, 110, 110, 0.85)"
-              : confirmPasswordMatches
-                ? "1px solid rgba(35, 214, 120, 0.7)"
-                : confirmPasswordMismatch
-                  ? "1px solid rgba(255, 178, 96, 0.76)"
-                  : inputBase.border,
-          }}
-          placeholder="********"
-        />
+        <div style={{ position: "relative" }}>
+          <input
+            value={contact.confirmPassword}
+            onChange={(e) => onConfirmPasswordChange(e.target.value)}
+            type={showConfirmPassword ? "text" : "password"}
+            style={{
+              ...inputBase,
+              paddingRight: 46,
+              border: errors.confirmPassword
+                ? "1px solid rgba(255, 110, 110, 0.85)"
+                : confirmPasswordMatches
+                  ? "1px solid rgba(35, 214, 120, 0.7)"
+                  : confirmPasswordMismatch
+                    ? "1px solid rgba(255, 178, 96, 0.76)"
+                    : inputBase.border,
+            }}
+            placeholder="********"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((prev) => !prev)}
+            style={iconButtonStyle}
+            aria-label={
+              showConfirmPassword
+                ? "Ocultar confirmación de contraseña"
+                : "Mostrar confirmación de contraseña"
+            }
+          >
+            <EyeIcon crossed={showConfirmPassword} />
+          </button>
+        </div>
         {errors.confirmPassword ? (
           <small style={{ color: ERROR_TEXT }}>{errors.confirmPassword}</small>
         ) : confirmPasswordMismatch ? (

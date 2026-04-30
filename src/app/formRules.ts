@@ -72,8 +72,53 @@ export function validateContactForm(
   return nextErrors;
 }
 
-export function validatePrefillForm(profile: ProfileForm): Record<string, string> {
+export function validatePrefillForm(
+  profile: ProfileForm,
+  requireIdentityData = false,
+): Record<string, string> {
   const nextErrors: Record<string, string> = {};
+  if (requireIdentityData) {
+    if (!profile.firstName.trim()) {
+      nextErrors.firstName = "Ingresa tu nombre";
+    }
+    if (!profile.lastName.trim()) {
+      nextErrors.lastName = "Ingresa tu apellido";
+    }
+    const birthDateValue = profile.birthDate.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDateValue)) {
+      nextErrors.birthDate = "Ingresa una fecha de nacimiento valida";
+    } else {
+      const birthDate = new Date(`${birthDateValue}T00:00:00`);
+      if (Number.isNaN(birthDate.getTime())) {
+        nextErrors.birthDate = "Ingresa una fecha de nacimiento valida";
+      } else {
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        const hasNotHadBirthdayYet =
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < birthDate.getDate());
+        if (hasNotHadBirthdayYet) {
+          age -= 1;
+        }
+        if (age < 18) {
+          nextErrors.birthDate = "Debes ser mayor de 18 años";
+        }
+      }
+    }
+    if (!/^\d{7,8}$/.test(profile.dni.trim())) {
+      nextErrors.dni = "Ingresa un DNI valido";
+    }
+    if (!/^\d{11}$/.test(profile.cuil.replace(/\D/g, ""))) {
+      nextErrors.cuil = "Ingresa un CUIL/CUIT valido";
+    }
+    if (profile.gender !== "M" && profile.gender !== "F") {
+      nextErrors.gender = "Selecciona un genero";
+    }
+    if (!/^salta$/i.test(profile.provincia.trim())) {
+      nextErrors.provincia = "Solo se puede registrar gente de Salta";
+    }
+  }
   if (!profile.provincia.trim()) {
     nextErrors.provincia = "Ingresa una provincia";
   }
