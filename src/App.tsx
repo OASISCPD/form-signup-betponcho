@@ -47,7 +47,6 @@ import {
   IneligibleStep,
   NosisStep,
 } from "./components/steps/StatusSteps";
-import { WelcomeStep } from "./components/steps/WelcomeStep";
 
 declare global {
   interface Window {
@@ -65,7 +64,6 @@ const appMainShellStyle: React.CSSProperties = {
 };
 
 const appCardStyle: React.CSSProperties = {
-  maxWidth: 740,
   margin: "0 auto",
   background: APP_SURFACE,
   border: PANEL_BORDER,
@@ -118,6 +116,12 @@ function useRegistrationFlowScreen() {
   const [isSubmittingIdentity, setIsSubmittingIdentity] = useState(false);
   const [isSubmittingPrefill, setIsSubmittingPrefill] = useState(false);
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
+  const showUnifiedFirstScreen = stage === "welcome" || stage === "identity";
+  const showBrandedScreen =
+    showUnifiedFirstScreen ||
+    stage === "nosis" ||
+    stage === "prefill" ||
+    stage === "contact";
 
   const step = useMemo(() => {
     if (stage === "welcome") return 0;
@@ -255,6 +259,13 @@ function useRegistrationFlowScreen() {
     return Object.keys(nextErrors).length === 0;
   };
 
+  const handleOpenLegalModal = useCallback(
+    (type: "privacy" | "terms") => {
+      setLegalModal((current) => (current === type ? current : type));
+    },
+    [setLegalModal],
+  );
+
   const isDuplicateDniRegistrationError = (error: unknown) => {
     const message =
       error instanceof Error ? error.message : String(error ?? "");
@@ -317,12 +328,7 @@ function useRegistrationFlowScreen() {
       provincia: draft.provinceLocal ?? draft.province ?? prev.provincia,
       ciudad: draft.cityLocal ?? draft.city ?? prev.ciudad,
       direccion: direccionCompuestaLocal || direccionCompuesta || prev.direccion,
-      pep:
-        draft.pepDeclared === null || draft.pepDeclared === undefined
-          ? prev.pep
-          : draft.pepDeclared
-            ? "Si"
-            : "No",
+      pep: draft.pepDeclared ? "Si" : "No",
       estadoCivil: draft.civilStatus
         ? fromCivilStatusApi(draft.civilStatus)
         : prev.estadoCivil,
@@ -340,6 +346,10 @@ function useRegistrationFlowScreen() {
     } else {
       setNosis(null);
     }
+
+    const isPendingReviewDraft =
+      draft.isEligible === false || Boolean(draft.ineligibleReason?.trim());
+    setShowReviewPendingModal(isPendingReviewDraft);
 
     const completed = draft.lastCompletedStep ?? 0;
     if (draft.completedAt || completed >= 3) {
@@ -418,8 +428,9 @@ function useRegistrationFlowScreen() {
 
     setIsSubmittingIdentity(true);
     try {
+      let draftAfterIdentity: RegistrationDraft | undefined;
       try {
-        await patchRegistrationStep(
+        draftAfterIdentity = await patchRegistrationStep(
           registrationSessionId,
           "identity",
           identityPayload,
@@ -452,17 +463,10 @@ function useRegistrationFlowScreen() {
       await new Promise((resolve) => setTimeout(resolve, 1200));
       if (nosisRequestId.current !== currentRequestId) return;
 
-      let resultFromIdentity: RegistrationDraft | undefined;
-      try {
-        resultFromIdentity = await getRegistrationDraft(registrationSessionId);
-      } catch {
-        resultFromIdentity = undefined;
-      }
-
       const safeFallbackGender: "" | "M" | "F" =
         identity.genero === "M" || identity.genero === "F" ? identity.genero : "";
-      const nosisFromIdentity = resultFromIdentity
-        ? buildNosisFromDraft(resultFromIdentity, safeFallbackGender)
+      const nosisFromIdentity = draftAfterIdentity
+        ? buildNosisFromDraft(draftAfterIdentity, safeFallbackGender)
         : null;
       if (nosisFromIdentity) {
         setNosis(nosisFromIdentity);
@@ -477,14 +481,15 @@ function useRegistrationFlowScreen() {
           provincia: nosisFromIdentity.provincia,
           ciudad: nosisFromIdentity.ciudad,
           direccion: nosisFromIdentity.direccion,
+          pep: draftAfterIdentity?.pepDeclared ? "Si" : "No",
         }));
         setStage("prefill");
         return;
       }
 
       const direccionCompuesta = [
-        resultFromIdentity?.addressStreetLocal ?? resultFromIdentity?.addressStreet,
-        resultFromIdentity?.addressNumberLocal ?? resultFromIdentity?.addressNumber,
+        draftAfterIdentity?.addressStreetLocal ?? draftAfterIdentity?.addressStreet,
+        draftAfterIdentity?.addressNumberLocal ?? draftAfterIdentity?.addressNumber,
       ]
         .filter(Boolean)
         .join(" ")
@@ -492,25 +497,26 @@ function useRegistrationFlowScreen() {
       setNosis(null);
       setProfile((prev) => ({
         ...prev,
-        firstName: resultFromIdentity?.firstName ?? prev.firstName,
-        lastName: resultFromIdentity?.lastName ?? prev.lastName,
-        birthDate: resultFromIdentity?.birthDate
-          ? resultFromIdentity.birthDate.split("T")[0]
+        firstName: draftAfterIdentity?.firstName ?? prev.firstName,
+        lastName: draftAfterIdentity?.lastName ?? prev.lastName,
+        birthDate: draftAfterIdentity?.birthDate
+          ? draftAfterIdentity.birthDate.split("T")[0]
           : prev.birthDate,
-        dni: resultFromIdentity?.dni ?? (identity.dni.trim() || prev.dni),
-        cuil: resultFromIdentity?.cuil ?? prev.cuil,
+        dni: draftAfterIdentity?.dni ?? (identity.dni.trim() || prev.dni),
+        cuil: draftAfterIdentity?.cuil ?? prev.cuil,
         gender:
-          (resultFromIdentity?.gender === "M" || resultFromIdentity?.gender === "F"
-            ? resultFromIdentity.gender
+          (draftAfterIdentity?.gender === "M" || draftAfterIdentity?.gender === "F"
+            ? draftAfterIdentity.gender
             : identity.genero === "M" || identity.genero === "F"
               ? identity.genero
               : prev.gender),
         provincia:
-          resultFromIdentity?.provinceLocal ??
-          resultFromIdentity?.province ??
+          draftAfterIdentity?.provinceLocal ??
+          draftAfterIdentity?.province ??
           prev.provincia,
-        ciudad: resultFromIdentity?.cityLocal ?? resultFromIdentity?.city ?? prev.ciudad,
+        ciudad: draftAfterIdentity?.cityLocal ?? draftAfterIdentity?.city ?? prev.ciudad,
         direccion: direccionCompuesta || prev.direccion,
+        pep: draftAfterIdentity?.pepDeclared ? "Si" : "No",
       }));
       setShowManualPrefillModal(true);
       setStage("prefill");
@@ -519,9 +525,8 @@ function useRegistrationFlowScreen() {
     }
   };
 
-  const handleStartRegistration = async () => {
+  const startRegistrationSession = useCallback(async () => {
     if (isCreatingSession) return;
-    trackEvent("form_start_click", { stage, step_index: step });
     setErrors((prev) => {
       if (!prev.registrationSession) return prev;
       const next = { ...prev };
@@ -550,7 +555,28 @@ function useRegistrationFlowScreen() {
     } finally {
       setIsCreatingSession(false);
     }
-  };
+  }, [isCreatingSession, setErrors, setIsCreatingSession, setRegistrationSessionId, setStage]);
+
+  const handleStartRegistration = useCallback(() => {
+    trackEvent("form_start_click", { stage, step_index: step });
+    void startRegistrationSession();
+  }, [stage, step, startRegistrationSession, trackEvent]);
+
+  useEffect(() => {
+    if (sessionIdFromUrl) return;
+    if (stage !== "welcome") return;
+    if (isCreatingSession) return;
+    if (registrationSessionId) return;
+    if (errors.registrationSession) return;
+    void startRegistrationSession();
+  }, [
+    errors.registrationSession,
+    isCreatingSession,
+    registrationSessionId,
+    sessionIdFromUrl,
+    stage,
+    startRegistrationSession,
+  ]);
 
   const validateContact = () => {
     const nextErrors = validateContactForm(contact);
@@ -772,46 +798,68 @@ function useRegistrationFlowScreen() {
   };
 
   return (
-    <main style={appMainShellStyle}>
-      <section style={appCardStyle}>
+    <main
+      style={
+        showBrandedScreen
+          ? {
+              ...appMainShellStyle,
+              paddingTop: 0,
+              paddingRight: 0,
+              paddingBottom: 0,
+              paddingLeft: 0,
+              background: "#000",
+            }
+          : appMainShellStyle
+      }
+    >
+      <section
+        style={{
+          ...appCardStyle,
+          maxWidth: showBrandedScreen ? 980 : 740,
+          background: showBrandedScreen ? "#000" : appCardStyle.background,
+          border: showBrandedScreen ? "none" : appCardStyle.border,
+          borderRadius: showBrandedScreen ? 0 : appCardStyle.borderRadius,
+          boxShadow: showBrandedScreen ? "none" : appCardStyle.boxShadow,
+        }}
+      >
+        {!showBrandedScreen ? (
+          <div
+            style={{
+              height: 3,
+              background:
+                "linear-gradient(90deg, rgba(255,120,120,0) 0%, rgba(255,120,120,0.9) 45%, rgba(255,120,120,0) 100%)",
+            }}
+          />
+        ) : null}
         <div
           style={{
-            height: 3,
-            background:
-              "linear-gradient(90deg, rgba(255,120,120,0) 0%, rgba(255,120,120,0.9) 45%, rgba(255,120,120,0) 100%)",
-          }}
-        />
-        <div
-          style={{
-            padding:
-              "clamp(16px, 4vw, 26px) clamp(12px, 3vw, 18px) clamp(18px, 4vw, 24px)",
-            maxWidth: 620,
+            padding: showBrandedScreen
+              ? 0
+              : "clamp(16px, 4vw, 26px) clamp(12px, 3vw, 18px) clamp(18px, 4vw, 24px)",
+            maxWidth: showBrandedScreen ? 920 : 620,
             margin: "0 auto",
           }}
         >
           <div key={stage} className="stage-transition">
-            {stage === "welcome" ? (
-              <WelcomeStep
-                isCreatingSession={isCreatingSession}
-                registrationSessionError={errors.registrationSession}
-                onStart={handleStartRegistration}
-              />
-            ) : (
+            {!showBrandedScreen ? (
               <FlowHeader stage={stage} step={step} onBack={goBack} />
-            )}
+            ) : null}
 
-            {stage === "identity" && (
+            {showUnifiedFirstScreen && (
               <IdentityStep
                 identity={identity}
                 referralCode={contact.referralCode}
                 errors={errors}
                 isSubmitting={isSubmittingIdentity}
+                isBootstrapping={stage === "welcome" && isCreatingSession}
+                registrationSessionError={errors.registrationSession}
+                onRetrySessionStart={handleStartRegistration}
                 onSubmit={handleIdentitySubmit}
                 onIdentityChange={(nextIdentity) => setIdentity(nextIdentity)}
                 onReferralCodeChange={(value) =>
                   setContact((prev) => ({ ...prev, referralCode: value }))
                 }
-                onOpenLegal={setLegalModal}
+                onOpenLegal={handleOpenLegalModal}
                 onClearErrors={(...keys) =>
                   setErrors((prev) => {
                     let changed = false;
@@ -943,6 +991,7 @@ function useRegistrationFlowScreen() {
                   });
                 }}
                 onContinue={handlePrefillContinue}
+                onBack={goBack}
               />
             )}
 
@@ -977,10 +1026,11 @@ function useRegistrationFlowScreen() {
                     return next;
                   });
                 }}
+                onBack={goBack}
               />
             )}
 
-            {stage === "nosis" && <NosisStep />}
+            {stage === "nosis" && <NosisStep onBack={goBack} />}
 
             {stage === "ineligible" && <IneligibleStep onRestart={restartFlow} />}
 

@@ -12,12 +12,39 @@ type WelcomeStepProps = {
   isCreatingSession: boolean;
   registrationSessionError?: string;
   onStart: () => void;
+  onOpenLegal: (type: "privacy" | "terms") => void;
+  showLegalNotice: boolean;
+};
+
+const legalNoticeStyle: React.CSSProperties = {
+  marginTop: 14,
+  padding: "10px 12px",
+  borderRadius: 12,
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  textAlign: "center",
+  color: "rgba(255,255,255,0.72)",
+  fontSize: 13,
+  lineHeight: 1.45,
+};
+
+const legalLinkStyle: React.CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "#ff6161",
+  textDecoration: "underline",
+  cursor: "pointer",
+  padding: 0,
+  font: "inherit",
+  fontWeight: 700,
 };
 
 export function WelcomeStep({
   isCreatingSession,
   registrationSessionError,
   onStart,
+  onOpenLegal,
+  showLegalNotice,
 }: WelcomeStepProps) {
   return (
     <div style={{ maxWidth: 560, margin: "0 auto" }}>
@@ -58,6 +85,46 @@ export function WelcomeStep({
       </div>
 
       <div style={{ marginBottom: 24 }}>
+        <LoadingButton
+          type="button"
+          onClick={onStart}
+          className="primary-cta"
+          isLoading={isCreatingSession}
+          loadingLabel="Iniciando sesion..."
+          style={primaryButton}
+        >
+          Comenzar registro
+        </LoadingButton>
+        {registrationSessionError ? (
+          <small
+            style={{
+              color: ERROR_TEXT,
+              display: "block",
+              marginTop: 10,
+            }}
+          >
+            {registrationSessionError}
+          </small>
+        ) : null}
+        {showLegalNotice ? (
+          <div style={legalNoticeStyle}>
+            <span>Al inscribirme en un evento acepto los </span>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                onOpenLegal("terms");
+              }}
+              style={legalLinkStyle}
+            >
+              terminos y condiciones
+            </button>
+            <span>.</span>
+          </div>
+        ) : null}
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
         <h3
           style={{
             textAlign: "center",
@@ -72,8 +139,8 @@ export function WelcomeStep({
         <div style={{ display: "grid", gap: 10 }}>
           {[
             "Documento de identidad (DNI)",
-            "Correo electronico válido",
-            "Número de teléfono móvil",
+            "Correo electronico valido",
+            "Numero de telefono movil",
           ].map((item) => (
             <div
               key={item}
@@ -116,9 +183,9 @@ export function WelcomeStep({
         </h3>
         <div style={{ display: "grid", gap: 9 }}>
           {[
-            "Completar DNI y género",
+            "Completar DNI y genero",
             "Confirmar tus datos personales",
-            "Completar tus datos y crear una contraseña",
+            "Completar tus datos y crear una contrasena",
           ].map((text, idx) => (
             <div
               key={text}
@@ -141,28 +208,6 @@ export function WelcomeStep({
           ))}
         </div>
       </div>
-
-      <LoadingButton
-        type="button"
-        onClick={onStart}
-        className="primary-cta"
-        isLoading={isCreatingSession}
-        loadingLabel="Iniciando sesion..."
-        style={primaryButton}
-      >
-        Comenzar registro
-      </LoadingButton>
-      {registrationSessionError ? (
-        <small
-          style={{
-            color: ERROR_TEXT,
-            display: "block",
-            marginTop: 10,
-          }}
-        >
-          {registrationSessionError}
-        </small>
-      ) : null}
     </div>
   );
 }

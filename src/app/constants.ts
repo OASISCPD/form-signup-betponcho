@@ -1,11 +1,11 @@
 import type { CSSProperties } from "react";
 
-export const HEADER_RED = "#590000";
 export const NAVBAR_RED = "#980000";
-export const CTA_GRADIENT = `linear-gradient(160deg, #c82222 0%, ${NAVBAR_RED} 58%, ${HEADER_RED} 100%)`;
+const CTA_GRADIENT =
+  "linear-gradient(160deg, #c82222 0%, #980000 58%, #590000 100%)";
 export const APP_SURFACE =
   "linear-gradient(165deg, rgba(15, 21, 40, 0.94) 0%, rgba(8, 12, 24, 0.96) 58%, rgba(5, 8, 18, 0.98) 100%)";
-export const PANEL_SURFACE =
+const PANEL_SURFACE =
   "linear-gradient(165deg, rgba(34, 17, 30, 0.76) 0%, rgba(20, 28, 48, 0.8) 100%)";
 export const PANEL_BORDER = "1px solid rgba(210, 62, 62, 0.42)";
 export const TEXT_PRIMARY = "rgba(255,255,255,0.97)";

@@ -13,24 +13,26 @@ export function ManualPrefillModal({ onClose }: ManualPrefillModalProps) {
       className="review-pending-overlay"
     >
       <div className="review-pending-card">
-        <div className="review-pending-icon" aria-hidden="true">
+        <div className="brand-modal-icon" aria-hidden="true">
           !
         </div>
         <h3 className="font-display review-pending-title">Carga manual</h3>
         <p className="review-pending-text">
-          No pudimos completar tus datos personales. 
+          No pudimos completar tus datos personales automaticamente.
         </p>
-                <p className="review-pending-text">
-          Podés continuar y cargando manualmente para no perder esta sesión.
+        <p className="review-pending-text">
+          Podes continuar y cargarlos manualmente para no perder esta sesion.
         </p>
         <button
           type="button"
+          className="primary-cta"
           onClick={onClose}
           style={{
             ...primaryButton,
-            width: "auto",
+            width: "min(260px, 100%)",
             minWidth: 180,
             minHeight: 44,
+            borderRadius: 999,
             padding: "10px 16px",
           }}
         >

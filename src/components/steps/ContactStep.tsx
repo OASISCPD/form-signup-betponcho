@@ -1,7 +1,11 @@
 import { FormEvent, useState } from "react";
-import { ERROR_TEXT, inputBase, panelBase, primaryButton } from "../../app/constants";
+import { ERROR_TEXT, inputBase, primaryButton } from "../../app/constants";
 import type { ContactForm } from "../../app/types";
-import { isPasswordValid } from "../../app/formRules";
+import {
+  isPasswordValid,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from "../../app/formRules";
 import { LoadingButton } from "../LoadingButton";
 
 type ContactStepProps = {
@@ -11,6 +15,7 @@ type ContactStepProps = {
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> | void;
   onPasswordChange: (value: string) => void;
   onConfirmPasswordChange: (value: string) => void;
+  onBack: () => void;
 };
 
 function EyeIcon({ crossed }: { crossed: boolean }) {
@@ -40,6 +45,7 @@ export function ContactStep({
   onSubmit,
   onPasswordChange,
   onConfirmPasswordChange,
+  onBack,
 }: ContactStepProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -50,6 +56,14 @@ export function ContactStep({
     confirmPasswordHasValue && contact.confirmPassword === contact.password;
   const confirmPasswordMismatch =
     confirmPasswordHasValue && contact.confirmPassword !== contact.password;
+  const preventClipboardAction = (
+    event: React.ClipboardEvent<HTMLInputElement>,
+  ) => {
+    event.preventDefault();
+  };
+  const preventDropAction = (event: React.DragEvent<HTMLInputElement>) => {
+    event.preventDefault();
+  };
 
   const iconButtonStyle: React.CSSProperties = {
     position: "absolute",
@@ -69,155 +83,206 @@ export function ContactStep({
   };
 
   return (
-    <form onSubmit={onSubmit} style={{ display: "grid", gap: 14, ...panelBase }}>
-      <label style={{ display: "grid", gap: 8 }}>
-        <span>Contraseña</span>
-        <div style={{ position: "relative" }}>
-          <input
-            value={contact.password}
-            onChange={(e) => onPasswordChange(e.target.value)}
-            type={showPassword ? "text" : "password"}
-            style={{
-              ...inputBase,
-              paddingRight: 46,
-              border: errors.password
-                ? "1px solid rgba(255, 110, 110, 0.85)"
-                : passwordConditionsOk
-                  ? "1px solid rgba(35, 214, 120, 0.7)"
-                  : inputBase.border,
-            }}
-            placeholder="********"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((prev) => !prev)}
-            style={iconButtonStyle}
-            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-          >
-            <EyeIcon crossed={showPassword} />
-          </button>
-        </div>
-        {errors.password ? <small style={{ color: ERROR_TEXT }}>{errors.password}</small> : null}
-      </label>
+    <div className="contact-page identity-shell">
+      <header className="identity-brand-header">
+        <img
+          src="/images/logo.png"
+          alt="BetPoncho"
+          className="identity-brand-logo"
+        />
+      </header>
 
-      {contact.password.length > 0 && (
-        <div
-          style={{
-            borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.16)",
-            background: "rgba(255,255,255,0.05)",
-            padding: "12px 13px",
-            display: "grid",
-            gap: 8,
-          }}
-        >
-          <strong style={{ fontSize: 14 }}>Tu contraseña debe incluir:</strong>
-          {[
-            {
-              ok: contact.password.length > 0,
-              text: "Este campo es obligatorio",
-            },
-            {
-              ok: /\d/.test(contact.password),
-              text: "Al menos un dígito",
-            },
-            {
-              ok: !/\s/.test(contact.password),
-              text: "Sin espacios",
-            },
-            {
-              ok: /^[\x00-\x7F]*$/.test(contact.password),
-              text: "Solo caracteres en inglés",
-            },
-            {
-              ok: contact.password.length >= 6,
-              text: "Longitud mínima 6",
-            },
-            {
-              ok: contact.password.length <= 50,
-              text: "Longitud máxima 50",
-            },
-            {
-              ok: /[A-Z]/.test(contact.password) && /[a-z]/.test(contact.password),
-              text: "Mayúsculas y minúsculas",
-            },
-          ].map((rule) => (
-            <div
-              key={rule.text}
+      <div className="brand-hero-art contact-hero">
+        <img
+          src="/images/hero.png"
+          alt="Bienvenido a BetPoncho"
+          className="brand-hero-image brand-hero-image-standard"
+        />
+      </div>
+
+      <nav className="prefill-flow-nav" aria-label="Progreso del registro">
+        <button type="button" onClick={onBack} className="prefill-back-button">
+          &lt; Volver
+        </button>
+        {[
+          { number: "✓", label: "Ingresar datos", done: true },
+          { number: "✓", label: "Confirmar", done: true },
+          { number: "3", label: "Crear cuenta", active: true },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className={`identity-step-chip ${
+              item.active ? "identity-step-chip-active" : ""
+            } ${item.done ? "identity-step-chip-done" : ""}`}
+          >
+            <span className="identity-step-chip-number">{item.number}</span>
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </nav>
+
+      <form onSubmit={onSubmit} className="contact-card">
+        <div className="prefill-card-head">
+          <div className="prefill-step-badge">3</div>
+          <h2 className="font-display">Crear cuenta</h2>
+        </div>
+
+        <label className="contact-field">
+          <span>Contrasena</span>
+          <div style={{ position: "relative" }}>
+            <input
+              value={contact.password}
+              onChange={(event) => onPasswordChange(event.target.value)}
+              type={showPassword ? "text" : "password"}
+              minLength={PASSWORD_MIN_LENGTH}
+              maxLength={PASSWORD_MAX_LENGTH}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 14,
-                color: rule.ok ? "#d8ffe6" : "rgba(255,255,255,0.8)",
+                ...inputBase,
+                paddingRight: 46,
+                border: errors.password
+                  ? "1px solid rgba(255, 110, 110, 0.85)"
+                  : passwordConditionsOk
+                    ? "1px solid rgba(35, 214, 120, 0.7)"
+                    : inputBase.border,
               }}
+              placeholder="********"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              style={iconButtonStyle}
+              aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
             >
-              <span
+              <EyeIcon crossed={showPassword} />
+            </button>
+          </div>
+          {errors.password ? (
+            <small style={{ color: ERROR_TEXT }}>{errors.password}</small>
+          ) : null}
+        </label>
+
+        {contact.password.length > 0 ? (
+          <div className="contact-password-rules">
+            <strong>Tu contrasena debe incluir:</strong>
+            {[
+              {
+                ok: contact.password.length > 0,
+                text: "Este campo es obligatorio",
+              },
+              {
+                ok: /\d/.test(contact.password),
+                text: "Al menos un digito",
+              },
+              {
+                ok: !/\s/.test(contact.password),
+                text: "Sin espacios",
+              },
+              {
+                ok: /^[\x00-\x7F]*$/.test(contact.password),
+                text: "Solo caracteres en ingles",
+              },
+              {
+                ok: contact.password.length >= PASSWORD_MIN_LENGTH,
+                text: `Longitud minima ${PASSWORD_MIN_LENGTH}`,
+              },
+              {
+                ok: contact.password.length <= PASSWORD_MAX_LENGTH,
+                text: `Longitud maxima ${PASSWORD_MAX_LENGTH}`,
+              },
+              {
+                ok: /[A-Z]/.test(contact.password) && /[a-z]/.test(contact.password),
+                text: "Mayusculas y minusculas",
+              },
+            ].map((rule) => (
+              <div
+                key={rule.text}
                 style={{
-                  color: rule.ok ? "#1dd05d" : "rgba(255,255,255,0.45)",
-                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 14,
+                  color: rule.ok ? "#d8ffe6" : "rgba(255,255,255,0.8)",
                 }}
               >
-                {rule.ok ? "✓" : "•"}
-              </span>
-              <span>{rule.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <label style={{ display: "grid", gap: 8 }}>
-        <span>Confirmar contraseña</span>
-        <div style={{ position: "relative" }}>
-          <input
-            value={contact.confirmPassword}
-            onChange={(e) => onConfirmPasswordChange(e.target.value)}
-            type={showConfirmPassword ? "text" : "password"}
-            style={{
-              ...inputBase,
-              paddingRight: 46,
-              border: errors.confirmPassword
-                ? "1px solid rgba(255, 110, 110, 0.85)"
-                : confirmPasswordMatches
-                  ? "1px solid rgba(35, 214, 120, 0.7)"
-                  : confirmPasswordMismatch
-                    ? "1px solid rgba(255, 178, 96, 0.76)"
-                    : inputBase.border,
-            }}
-            placeholder="********"
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword((prev) => !prev)}
-            style={iconButtonStyle}
-            aria-label={
-              showConfirmPassword
-                ? "Ocultar confirmación de contraseña"
-                : "Mostrar confirmación de contraseña"
-            }
-          >
-            <EyeIcon crossed={showConfirmPassword} />
-          </button>
-        </div>
-        {errors.confirmPassword ? (
-          <small style={{ color: ERROR_TEXT }}>{errors.confirmPassword}</small>
-        ) : confirmPasswordMismatch ? (
-          <small style={{ color: "#ffd08f" }}>Las contraseñas no coinciden.</small>
-        ) : confirmPasswordMatches ? (
-          <small style={{ color: "#9ff3bf" }}>Las contraseñas coinciden.</small>
+                <span
+                  style={{
+                    color: rule.ok ? "#1dd05d" : "rgba(255,255,255,0.45)",
+                    fontWeight: 700,
+                  }}
+                >
+                  {rule.ok ? "✓" : "•"}
+                </span>
+                <span>{rule.text}</span>
+              </div>
+            ))}
+          </div>
         ) : null}
-      </label>
 
-      <LoadingButton
-        type="submit"
-        className="primary-cta"
-        style={primaryButton}
-        isLoading={isSubmitting}
-        loadingLabel="Creando cuenta..."
-      >
-        Completar registro
-      </LoadingButton>
-      {errors.accountApi ? <small style={{ color: ERROR_TEXT }}>{errors.accountApi}</small> : null}
-    </form>
+        <label className="contact-field">
+          <span>Confirmar contrasena</span>
+          <div style={{ position: "relative" }}>
+            <input
+              value={contact.confirmPassword}
+              onChange={(event) => onConfirmPasswordChange(event.target.value)}
+              type={showConfirmPassword ? "text" : "password"}
+              minLength={PASSWORD_MIN_LENGTH}
+              maxLength={PASSWORD_MAX_LENGTH}
+              onCopy={preventClipboardAction}
+              onCut={preventClipboardAction}
+              onPaste={preventClipboardAction}
+              onDrop={preventDropAction}
+              style={{
+                ...inputBase,
+                paddingRight: 46,
+                border: errors.confirmPassword
+                  ? "1px solid rgba(255, 110, 110, 0.85)"
+                  : confirmPasswordMatches
+                    ? "1px solid rgba(35, 214, 120, 0.7)"
+                    : confirmPasswordMismatch
+                      ? "1px solid rgba(255, 178, 96, 0.76)"
+                      : inputBase.border,
+              }}
+              placeholder="********"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              style={iconButtonStyle}
+              aria-label={
+                showConfirmPassword
+                  ? "Ocultar confirmacion de contrasena"
+                  : "Mostrar confirmacion de contrasena"
+              }
+            >
+              <EyeIcon crossed={showConfirmPassword} />
+            </button>
+          </div>
+          {errors.confirmPassword ? (
+            <small style={{ color: ERROR_TEXT }}>{errors.confirmPassword}</small>
+          ) : confirmPasswordMismatch ? (
+            <small style={{ color: "#ffd08f" }}>Las contrasenas no coinciden.</small>
+          ) : confirmPasswordMatches ? (
+            <small style={{ color: "#9ff3bf" }}>Las contrasenas coinciden.</small>
+          ) : null}
+        </label>
+
+        <LoadingButton
+          type="submit"
+          className="primary-cta contact-submit"
+          style={primaryButton}
+          isLoading={isSubmitting}
+          loadingLabel="Creando cuenta..."
+        >
+          Completar registro
+        </LoadingButton>
+        {errors.accountApi ? (
+          <small style={{ color: ERROR_TEXT }}>{errors.accountApi}</small>
+        ) : null}
+      </form>
+
+      <div className="identity-footer-wrap" aria-hidden="true">
+        <img src="/images/footer.png" alt="" className="identity-footer-image" />
+      </div>
+    </div>
   );
 }

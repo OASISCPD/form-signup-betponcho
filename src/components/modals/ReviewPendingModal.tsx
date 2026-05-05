@@ -23,7 +23,7 @@ export function ReviewPendingModal({ onProceed }: ReviewPendingModalProps) {
       className="review-pending-overlay"
     >
       <div className="review-pending-card">
-        <div className="review-pending-icon" aria-hidden="true">
+        <div className="brand-modal-icon" aria-hidden="true">
           !
         </div>
         <h3 id={titleId} className="font-display review-pending-title">
@@ -37,12 +37,14 @@ export function ReviewPendingModal({ onProceed }: ReviewPendingModalProps) {
         <button
           ref={proceedButtonRef}
           type="button"
+          className="primary-cta"
           onClick={onProceed}
           style={{
             ...primaryButton,
-            width: "auto",
+            width: "min(260px, 100%)",
             minWidth: 180,
             minHeight: 44,
+            borderRadius: 999,
             padding: "10px 16px",
           }}
         >

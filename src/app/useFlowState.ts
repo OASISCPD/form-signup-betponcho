@@ -20,7 +20,6 @@ type AppState = {
   errors: Record<string, string>;
   nosis: NosisData | null;
   legalModal: LegalModalType | null;
-  provinceNotSaltaModalMessage: string;
 };
 
 type AppAction =
@@ -33,7 +32,6 @@ type AppAction =
   | { type: "errors"; value: Updater<Record<string, string>> }
   | { type: "nosis"; value: Updater<NosisData | null> }
   | { type: "legalModal"; value: Updater<LegalModalType | null> }
-  | { type: "provinceNotSaltaModalMessage"; value: Updater<string> }
   | { type: "resetFlow" };
 
 const EMPTY_IDENTITY: IdentityForm = {
@@ -83,7 +81,6 @@ function createInitialState(sessionIdFromUrl: string): AppState {
     errors: {},
     nosis: null,
     legalModal: null,
-    provinceNotSaltaModalMessage: "",
   };
 }
 
@@ -118,14 +115,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         legalModal: applyUpdate(state.legalModal, action.value),
-      };
-    case "provinceNotSaltaModalMessage":
-      return {
-        ...state,
-        provinceNotSaltaModalMessage: applyUpdate(
-          state.provinceNotSaltaModalMessage,
-          action.value,
-        ),
       };
     case "resetFlow":
       return createInitialState("");
@@ -167,12 +156,6 @@ export function useFlowState(sessionIdFromUrl: string) {
   const setLegalModal = useCallback((value: Updater<LegalModalType | null>) => {
     dispatch({ type: "legalModal", value });
   }, []);
-  const setProvinceNotSaltaModalMessage = useCallback(
-    (value: Updater<string>) => {
-      dispatch({ type: "provinceNotSaltaModalMessage", value });
-    },
-    [],
-  );
 
   return {
     state,
@@ -186,6 +169,5 @@ export function useFlowState(sessionIdFromUrl: string) {
     setErrors,
     setNosis,
     setLegalModal,
-    setProvinceNotSaltaModalMessage,
   };
 }

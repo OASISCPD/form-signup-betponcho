@@ -7,6 +7,9 @@ import type {
   RegistrationDraft,
 } from "./types";
 
+export const PASSWORD_MIN_LENGTH = 6;
+export const PASSWORD_MAX_LENGTH = 50;
+
 export function validateIdentityForm(
   identity: IdentityForm,
   referralCode: string,
@@ -50,8 +53,8 @@ export function isPasswordValid(password: string): boolean {
     /\d/.test(password) &&
     !/\s/.test(password) &&
     /^[\x00-\x7F]*$/.test(password) &&
-    password.length >= 6 &&
-    password.length <= 50 &&
+    password.length >= PASSWORD_MIN_LENGTH &&
+    password.length <= PASSWORD_MAX_LENGTH &&
     /[A-Z]/.test(password) &&
     /[a-z]/.test(password)
   );
