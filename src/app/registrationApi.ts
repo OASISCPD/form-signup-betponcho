@@ -111,7 +111,7 @@ export async function patchRegistrationStep(
   sessionId: string,
   stepPath: "identity" | "confirmation" | "account",
   body: unknown,
-): Promise<RegistrationDraft | undefined> {
+): Promise<{ data: RegistrationDraft | undefined; message: string | undefined }> {
   const sanitizedBody =
     body && typeof body === "object"
       ? Object.fromEntries(
@@ -131,7 +131,7 @@ export async function patchRegistrationStep(
     typeof sanitizedBody === "object" &&
     Object.keys(sanitizedBody as Record<string, unknown>).length === 0
   ) {
-    return undefined;
+    return { data: undefined, message: undefined };
   }
 
   const response = await fetch(
@@ -159,5 +159,5 @@ export async function patchRegistrationStep(
       `No se pudo guardar el paso de ${stepName}.`,
     );
   }
-  return payload?.data;
+  return { data: payload?.data, message: payload?.message };
 }

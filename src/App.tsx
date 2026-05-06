@@ -1,4 +1,4 @@
-﻿import {
+import {
   FormEvent,
   useCallback,
   useEffect,
@@ -430,11 +430,21 @@ function useRegistrationFlowScreen() {
     try {
       let draftAfterIdentity: RegistrationDraft | undefined;
       try {
-        draftAfterIdentity = await patchRegistrationStep(
+        const identityResult = await patchRegistrationStep(
           registrationSessionId,
           "identity",
           identityPayload,
         );
+
+        if (identityResult.message === "DNI_ALREADY_IN_BETCONSTRUCT") {
+          setErrors((prev) => ({
+            ...prev,
+            dni: "Este DNI ya está registrado en BetPoncho.",
+          }));
+          return;
+        }
+
+        draftAfterIdentity = identityResult.data;
       } catch (error) {
         if (isDuplicateDniRegistrationError(error)) {
           setErrors((prev) => {
@@ -599,7 +609,7 @@ function useRegistrationFlowScreen() {
     try {
       let draftAfterAccount: RegistrationDraft | undefined;
       try {
-        draftAfterAccount = await patchRegistrationStep(
+        const accountResult = await patchRegistrationStep(
           registrationSessionId,
           "account",
           {
@@ -607,6 +617,7 @@ function useRegistrationFlowScreen() {
             dni: identity.dni.trim(),
           },
         );
+        draftAfterAccount = accountResult.data;
       } catch (error) {
         const message =
           error instanceof Error

@@ -43,7 +43,9 @@ export function IdentityStep({
   onClearErrors,
 }: IdentityStepProps) {
   const hasCompletedRegistrationDniError =
-    /Este DNI ya tiene un registro finalizado/i.test(errors.dni ?? "");
+    /Este DNI ya tiene un registro finalizado|Este DNI ya está registrado en BetPoncho/i.test(
+      errors.dni ?? "",
+    );
   const confirmEmailHasValue = identity.confirmEmail.trim().length > 0;
   const emailsMatch =
     confirmEmailHasValue && identity.confirmEmail.trim() === identity.email.trim();
@@ -207,15 +209,14 @@ export function IdentityStep({
                 placeholder="bet@poncho.com"
                 classNames={{
                   ...emailAutocompleteClassNames,
-                  input: `email-auto-input ${
-                    errors.email
-                      ? "email-auto-input-error"
-                      : emailsMatch
-                        ? "email-auto-input-valid"
-                        : emailMismatch
-                          ? "email-auto-input-warning"
-                          : ""
-                  }`,
+                  input: `email-auto-input ${errors.email
+                    ? "email-auto-input-error"
+                    : emailsMatch
+                      ? "email-auto-input-valid"
+                      : emailMismatch
+                        ? "email-auto-input-warning"
+                        : ""
+                    }`,
                 }}
                 aria-label="Email"
                 onCopy={preventClipboardAction}
@@ -372,7 +373,6 @@ export function IdentityStep({
               ) : null}
             </label>
           </div>
-
           <div className="identity-form-actions">
             <LoadingButton
               type="submit"
@@ -382,7 +382,7 @@ export function IdentityStep({
               disabled={hasCompletedRegistrationDniError || isBootstrapping}
               loadingLabel={isBootstrapping ? "Preparando..." : "Verificando..."}
             >
-              Verificar
+              {isSubmitting ? "Verificando..." : "Verificar"}
             </LoadingButton>
             {errors.identityApi ? (
               <small style={{ color: ERROR_TEXT }}>{errors.identityApi}</small>
