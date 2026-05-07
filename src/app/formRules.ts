@@ -32,7 +32,7 @@ export function validateIdentityForm(
   } else if (identity.confirmEmail.trim() !== identity.email.trim()) {
     nextErrors.confirmEmail = "Los emails no coinciden.";
   }
-  if (!/^\d{8,15}$/.test(identity.telefono.trim())) {
+  if (!/^\d{10}$/.test(identity.telefono.trim())) {
     nextErrors.telefono = "Ingresa un telefono valido (solo numeros).";
   }
   if (!identity.acceptedLegal) {

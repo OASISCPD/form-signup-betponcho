@@ -27,6 +27,12 @@ type IdentityStepProps = {
   onClearErrors: (...keys: string[]) => void;
 };
 
+function formatSaltaPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+}
+
 export function IdentityStep({
   identity,
   referralCode,
@@ -42,7 +48,7 @@ export function IdentityStep({
   onClearErrors,
 }: IdentityStepProps) {
   const hasCompletedRegistrationDniError =
-    /Este DNI ya tiene un registro finalizado|Este DNI ya está registrado en BetPoncho/i.test(
+    /Este DNI ya tiene un registro finalizado|Este DNI ya está registrado en BetPoncho|Debes ser mayor de 18 años para registrarte/i.test(
       errors.dni ?? "",
     );
   const confirmEmailHasValue = identity.confirmEmail.trim().length > 0;
@@ -304,11 +310,11 @@ export function IdentityStep({
               <input
                 name="telefono"
                 type="tel"
-                value={identity.telefono}
+                value={formatSaltaPhone(identity.telefono)}
                 onChange={(e) =>
                   onIdentityChange({
                     ...identity,
-                    telefono: e.target.value.replace(/\D/g, "").slice(0, 15),
+                    telefono: e.target.value.replace(/\D/g, "").slice(0, 10),
                   })
                 }
                 inputMode="tel"
@@ -320,7 +326,7 @@ export function IdentityStep({
                     ? "1px solid rgba(255, 110, 110, 0.85)"
                     : inputBase.border,
                 }}
-                placeholder="3874123456"
+                placeholder="(387) 4123456"
               />
               {errors.telefono ? (
                 <small style={{ color: ERROR_TEXT }}>{errors.telefono}</small>
@@ -364,7 +370,7 @@ export function IdentityStep({
                     font: "inherit",
                   }}
                 >
-                  POLITICA DE PRIVACIDAD
+                  POLÍTICA DE PRIVACIDAD
                 </button>{" "}
                 y los{" "}
                 <button

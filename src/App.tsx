@@ -73,6 +73,8 @@ const appCardStyle: React.CSSProperties = {
 };
 
 function useRegistrationFlowScreen() {
+  const MINOR_AGE_DNI_MESSAGE =
+    "Debes ser mayor de 18 años para registrarte.";
   const sessionIdFromUrl =
     typeof window !== "undefined"
       ? (new URLSearchParams(window.location.search).get("sessionId") ?? "")
@@ -280,6 +282,9 @@ function useRegistrationFlowScreen() {
     );
   };
 
+  const isMinorAgeIneligibleDraft = (draft?: RegistrationDraft) =>
+    draft?.ineligibleReason?.trim().toUpperCase() === "MINOR_AGE";
+
   const applyDraftToState = (draft: RegistrationDraft) => {
     const sessionId = draft.sessionId ?? "";
     if (sessionId) {
@@ -347,10 +352,20 @@ function useRegistrationFlowScreen() {
     }
 
     const isPendingReviewDraft =
-      draft.isEligible === false || Boolean(draft.ineligibleReason?.trim());
+      !isMinorAgeIneligibleDraft(draft) &&
+      (draft.isEligible === false || Boolean(draft.ineligibleReason?.trim()));
     setShowReviewPendingModal(isPendingReviewDraft);
 
     const completed = draft.lastCompletedStep ?? 0;
+    if (completed < 1 && isMinorAgeIneligibleDraft(draft)) {
+      setErrors((prev) => ({
+        ...prev,
+        dni: MINOR_AGE_DNI_MESSAGE,
+      }));
+      setStage("identity");
+      return;
+    }
+
     if (draft.completedAt || completed >= 3) {
       setStage("complete");
       return;
@@ -444,6 +459,15 @@ function useRegistrationFlowScreen() {
         }
 
         draftAfterIdentity = identityResult.data;
+        if (isMinorAgeIneligibleDraft(draftAfterIdentity)) {
+          setErrors((prev) => {
+            const next = { ...prev };
+            delete next.identityApi;
+            next.dni = MINOR_AGE_DNI_MESSAGE;
+            return next;
+          });
+          return;
+        }
       } catch (error) {
         if (isDuplicateDniRegistrationError(error)) {
           setErrors((prev) => {

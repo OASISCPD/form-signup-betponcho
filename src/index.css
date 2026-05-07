@@ -129,7 +129,7 @@ html {
 }
 
 .email-auto-input::placeholder {
-  color: rgba(255, 255, 255, 0.62);
+  color: rgba(255, 255, 255, 0.38);
 }
 
 .email-auto-dropdown {
@@ -199,6 +199,14 @@ input[type="number"],
 select,
 .email-auto-input {
   transition: border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
+input[type="tel"]::placeholder {
+  color: rgba(255, 255, 255, 0.38);
 }
 
 select {
@@ -1062,7 +1070,7 @@ select:focus-visible,
 }
 
 .editable-prefill-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.38);
   text-transform: none;
 }
 
