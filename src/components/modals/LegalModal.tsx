@@ -29,7 +29,7 @@ const cardStyle: React.CSSProperties = {
   maxHeight: "88dvh",
   borderRadius: 26,
   border: "1px solid rgba(255, 22, 10, 0.9)",
-  background: "#000",
+  background: "#ebebeb",
   boxShadow: "0 30px 50px -30px rgba(0,0,0,0.9)",
   overflow: "hidden",
   display: "grid",
@@ -56,7 +56,7 @@ export function LegalModal({ title, content, onClose }: LegalModalProps) {
             className="font-display"
             style={{
               margin: 0,
-              color: "#fff",
+              color: "#111",
               fontSize: "clamp(26px, 6vw, 34px)",
               lineHeight: 1,
               textTransform: "uppercase",
@@ -66,13 +66,17 @@ export function LegalModal({ title, content, onClose }: LegalModalProps) {
           </h3>
         </div>
         <div
+          className="legal-modal-content"
           style={{
             padding: "16px 20px 10px",
             overflowY: "auto",
             whiteSpace: "pre-wrap",
             lineHeight: 1.5,
-            color: "rgba(255,255,255,0.86)",
+            color: "#111",
             fontSize: 14,
+            fontFamily: '"Roboto", sans-serif',
+            fontWeight: 500,
+            fontStyle: "italic",
           }}
         >
           {content}

@@ -7,9 +7,9 @@
 }
 
 @font-face {
-  font-family: "Roboto";
-  src: url("/fonts/Roboto-BoldCondensedItalic.ttf") format("truetype");
-  font-weight: 700;
+  font-family: "Roboto Condensed Italic";
+  src: url("/fonts/Roboto-CondensedItalic.ttf") format("truetype");
+  font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
@@ -49,6 +49,30 @@ html {
 
 #root {
   min-height: 100dvh;
+}
+
+.legal-modal-content {
+  scrollbar-width: thin;
+  scrollbar-color: #c50000 #d9d9d9;
+}
+
+.legal-modal-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.legal-modal-content::-webkit-scrollbar-track {
+  background: #d9d9d9;
+  border-radius: 999px;
+}
+
+.legal-modal-content::-webkit-scrollbar-thumb {
+  background: #c50000;
+  border-radius: 999px;
+  border: 2px solid #d9d9d9;
+}
+
+.legal-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #980000;
 }
 
 .font-display {
@@ -557,7 +581,7 @@ select:focus-visible,
 }
 
 .brand-hero-image-standard {
-  margin-bottom: clamp(-40px, -20vw, -70px);
+  margin-bottom: clamp(-20px, -20vw, -70px);
 }
 
 .identity-hero {
@@ -813,10 +837,10 @@ select:focus-visible,
 
 .identity-form-grid label > span:first-child {
   color: #fff !important;
-  font-family: "Roboto", sans-serif;
+  font-family: "Roboto Condensed Italic", "Roboto", sans-serif !important;
   font-size: 13px;
-  font-style: italic;
-  font-weight: 700;
+  font-style: italic !important;
+  font-weight: 400;
   line-height: 1.05;
   text-align: left;
   text-transform: uppercase;
@@ -902,15 +926,15 @@ select:focus-visible,
 }
 
 .identity-footer-wrap {
-  width: calc(100% - 52px);
+  width: 100%;
   margin: auto auto 0;
 }
 
 .identity-footer-image {
   display: block;
-  width: 100%;
+  width: calc(100% - 72px);
   height: auto;
-  margin-bottom: 25px;
+  margin: 0 auto 25px;
 }
 
 .prefill-shell {
@@ -1008,10 +1032,10 @@ select:focus-visible,
 .editable-prefill-caption,
 .readonly-prefill-caption {
   color: #fff !important;
-  font-family: "Roboto", sans-serif;
+  font-family: "Roboto Condensed Italic", "Roboto", sans-serif !important;
   font-size: 13px;
-  font-style: italic;
-  font-weight: 700;
+  font-style: italic !important;
+  font-weight: 400;
   line-height: 1.05;
   text-align: left;
   text-transform: uppercase;
@@ -1153,10 +1177,10 @@ select:focus-visible,
 
 .contact-field > span {
   color: #fff;
-  font-family: "Roboto", sans-serif;
+  font-family: "Roboto Condensed Italic", "Roboto", sans-serif !important;
   font-size: 13px;
-  font-style: italic;
-  font-weight: 700;
+  font-style: italic !important;
+  font-weight: 400;
   line-height: 1.05;
   text-align: left;
   text-transform: uppercase;
@@ -1239,153 +1263,6 @@ small {
   }
 }
 
-.phone-input-container {
-  width: 100% !important;
-  font-family: "Roboto", sans-serif !important;
-}
-
-.phone-input-field {
-  width: 100% !important;
-  height: 50px !important;
-  border-radius: 14px !important;
-  border: 1px solid rgba(224, 86, 86, 0.55) !important;
-  background: rgba(255, 255, 255, 0.09) !important;
-  color: rgba(255, 255, 255, 0.97) !important;
-  font-size: 16px !important;
-  padding-left: 56px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 6px 14px -10px rgba(0, 0, 0, 0.65) !important;
-}
-
-.phone-input-field.phone-input-field-error {
-  border: 1px solid rgba(255, 110, 110, 0.85) !important;
-}
-
-.phone-input-flag {
-  width: 42px !important;
-  border-radius: 14px 0 0 14px !important;
-  border: 1px solid rgba(224, 86, 86, 0.55) !important;
-  border-right: none !important;
-  background: rgba(255, 255, 255, 0.04) !important;
-}
-
-.phone-input-flag.phone-input-flag-error {
-  border: 1px solid rgba(255, 110, 110, 0.85) !important;
-  border-right: none !important;
-}
-
-.phone-input-container .selected-flag:hover,
-.phone-input-container .selected-flag:focus {
-  background: transparent !important;
-}
-
-.phone-input-container .selected-flag {
-  border-radius: 10px 0 0 10px !important;
-  background: transparent !important;
-}
-
-.phone-input-container .flag-dropdown.open,
-.phone-input-container .flag-dropdown.open .selected-flag {
-  background: #111 !important;
-  border-radius: 10px 0 0 10px !important;
-}
-
-.phone-input-container .selected-flag .arrow {
-  border-top-color: #fff !important;
-  left: 22px !important;
-}
-
-.phone-input-container .selected-flag .arrow.up {
-  border-bottom-color: #fff !important;
-  border-top-color: transparent !important;
-}
-
-.phone-input-dropdown {
-  background: #050505 !important;
-  border: 2px solid rgba(255, 22, 10, 0.9) !important;
-  border-radius: 10px !important;
-  color: rgba(255, 255, 255, 0.95) !important;
-  overflow: hidden !important;
-  box-shadow: 0 16px 32px -22px rgba(0, 0, 0, 0.9) !important;
-  margin-top: 6px !important;
-  padding: 0 !important;
-  max-height: 240px !important;
-  scrollbar-color: #c50000 #050505;
-}
-
-.phone-input-dropdown::-webkit-scrollbar {
-  width: 8px;
-}
-
-.phone-input-dropdown::-webkit-scrollbar-track {
-  background: #050505;
-}
-
-.phone-input-dropdown::-webkit-scrollbar-thumb {
-  background: #c50000;
-  border-radius: 999px;
-}
-
-.phone-input-dropdown .search {
-  background: #050505 !important;
-  padding: 10px !important;
-  border-bottom: 1px solid rgba(255, 22, 10, 0.45) !important;
-}
-
-.phone-input-dropdown .search-box {
-  width: 100% !important;
-  height: 38px !important;
-  margin: 0 !important;
-  border: 2px solid rgba(255, 22, 10, 0.9) !important;
-  border-radius: 10px !important;
-  background: #111 !important;
-  color: #fff !important;
-  font-size: 14px !important;
-  padding: 8px 10px !important;
-}
-
-.phone-input-dropdown .search-box::placeholder {
-  color: rgba(255, 255, 255, 0.46) !important;
-}
-
-.phone-input-dropdown .country {
-  color: rgba(255, 255, 255, 0.92) !important;
-  padding: 10px 12px !important;
-  line-height: 1.2 !important;
-  background: #050505 !important;
-}
-
-.phone-input-dropdown .country .dial-code {
-  color: rgba(255, 255, 255, 0.62) !important;
-}
-
-.phone-input-dropdown .country:hover,
-.phone-input-dropdown .country.highlight {
-  background: #c50000 !important;
-  color: #fff !important;
-}
-
-.phone-input-dropdown .country:hover .dial-code,
-.phone-input-dropdown .country.highlight .dial-code {
-  color: rgba(255, 255, 255, 0.86) !important;
-}
-
-.identity-form-card .phone-input-field {
-  height: 42px !important;
-  border: 2px solid var(--bp-red) !important;
-  border-radius: 10px !important;
-  background: var(--bp-field) !important;
-  box-shadow: none !important;
-  font-size: 15px !important;
-}
-
-.identity-form-card .phone-input-flag {
-  width: 42px !important;
-  border: 2px solid var(--bp-red) !important;
-  border-right: none !important;
-  border-radius: 10px 0 0 10px !important;
-  background: #111 !important;
-}
-
 @media (min-width: 540px) {
   .identity-shell {
     max-width: 920px;
@@ -1404,6 +1281,10 @@ small {
   .prefill-card {
     border-radius: 38px;
     padding: 34px 58px 36px;
+  }
+
+  .identity-footer-image {
+    width: min(644px, calc(100% - 190px));
   }
 
   .contact-card {

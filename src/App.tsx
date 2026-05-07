@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
 } from "react";
-import "react-phone-input-2/lib/style.css";
 import {
   APP_SURFACE,
   PANEL_BORDER,
@@ -254,7 +253,7 @@ function useRegistrationFlowScreen() {
   }, [stage, step, trackEvent]);
 
   const validateIdentity = () => {
-    const nextErrors = validateIdentityForm(identity, contact.referralCode);
+    const nextErrors = validateIdentityForm(identity);
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };

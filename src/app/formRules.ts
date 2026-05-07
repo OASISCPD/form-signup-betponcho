@@ -12,7 +12,6 @@ export const PASSWORD_MAX_LENGTH = 50;
 
 export function validateIdentityForm(
   identity: IdentityForm,
-  referralCode: string,
 ): Record<string, string> {
   const nextErrors: Record<string, string> = {};
   if (!/^\d{7,8}$/.test(identity.dni.trim())) {
@@ -39,10 +38,6 @@ export function validateIdentityForm(
   if (!identity.acceptedLegal) {
     nextErrors.acceptedLegal =
       "Debes aceptar términos y confirmar que eres mayor de 18 años.";
-  }
-  if (referralCode && !/^[a-zA-Z0-9_-]{3,30}$/.test(referralCode.trim())) {
-    nextErrors.referralCode =
-      "Codigo de Referido invalido (3-30, letras, numeros, guion o guion bajo).";
   }
   return nextErrors;
 }

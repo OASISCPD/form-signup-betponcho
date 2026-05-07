@@ -10,7 +10,7 @@ const PANEL_SURFACE =
 export const PANEL_BORDER = "1px solid rgba(210, 62, 62, 0.42)";
 export const TEXT_PRIMARY = "rgba(255,255,255,0.97)";
 export const TEXT_SECONDARY = "rgba(255,255,255,0.84)";
-export const ERROR_TEXT = "#ffb4b4";
+export const ERROR_TEXT = "#ff0000";
 
 export const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3028"

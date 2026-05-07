@@ -1,4 +1,4 @@
-const ERROR_TEXT = "#ffb4b4";
+const ERROR_TEXT = "#ff0000";
 
 type EditablePrefillFieldProps = {
   label: string;

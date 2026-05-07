@@ -1,6 +1,5 @@
 import { FormEvent } from "react";
 import { Email } from "@smastrom/react-email-autocomplete";
-import PhoneInput from "react-phone-input-2";
 import {
   emailAutocompleteClassNames,
   ERROR_TEXT,
@@ -48,9 +47,11 @@ export function IdentityStep({
     );
   const confirmEmailHasValue = identity.confirmEmail.trim().length > 0;
   const emailsMatch =
-    confirmEmailHasValue && identity.confirmEmail.trim() === identity.email.trim();
+    confirmEmailHasValue &&
+    identity.confirmEmail.trim() === identity.email.trim();
   const emailMismatch =
-    confirmEmailHasValue && identity.confirmEmail.trim() !== identity.email.trim();
+    confirmEmailHasValue &&
+    identity.confirmEmail.trim() !== identity.email.trim();
   const formDisabled = isBootstrapping || isSubmitting;
 
   const preventClipboardAction = (
@@ -102,7 +103,9 @@ export function IdentityStep({
           <div className="identity-form-step">1</div>
           <div>
             <p className="identity-form-eyebrow">Paso 1</p>
-            <h2 className="identity-form-title font-display">Datos personales</h2>
+            <h2 className="identity-form-title font-display">
+              Datos personales
+            </h2>
           </div>
         </div>
 
@@ -141,12 +144,18 @@ export function IdentityStep({
             <label style={{ display: "grid", gap: 8 }}>
               <span style={{ color: TEXT_PRIMARY }}>DNI</span>
               <input
+                name="dni"
                 value={identity.dni}
                 onChange={(e) => {
-                  onIdentityChange({ ...identity, dni: e.target.value.replace(/\D/g, "") });
+                  onIdentityChange({
+                    ...identity,
+                    dni: e.target.value.replace(/\D/g, ""),
+                  });
                   onClearErrors("dni", "identityApi");
                 }}
+                type="text"
                 inputMode="numeric"
+                autoComplete="on"
                 maxLength={8}
                 style={inputBase}
                 placeholder="30123456"
@@ -154,7 +163,9 @@ export function IdentityStep({
               {errors.dni ? (
                 <small style={{ color: ERROR_TEXT }}>{errors.dni}</small>
               ) : (
-                <small className="identity-field-hint">Ingresa los 7 o 8 digitos</small>
+                <small className="identity-field-hint">
+                  Ingresa los 7 o 8 digitos
+                </small>
               )}
             </label>
 
@@ -170,17 +181,23 @@ export function IdentityStep({
                 }
                 style={selectBase}
               >
-                <option value="" style={{ color: "#fff", background: "#050505" }}>
+                <option
+                  value=""
+                  style={{ color: "#fff", background: "#050505" }}
+                >
                   Seleccionar
                 </option>
-                <option value="M" style={{ color: "#fff", background: "#050505" }}>
+                <option
+                  value="M"
+                  style={{ color: "#fff", background: "#050505" }}
+                >
                   Masculino
                 </option>
-                <option value="F" style={{ color: "#fff", background: "#050505" }}>
+                <option
+                  value="F"
+                  style={{ color: "#fff", background: "#050505" }}
+                >
                   Femenino
-                </option>
-                <option value="X" style={{ color: "#fff", background: "#050505" }}>
-                  No binario
                 </option>
               </select>
               {errors.genero ? (
@@ -188,7 +205,10 @@ export function IdentityStep({
               ) : null}
             </label>
 
-            <label className="identity-form-span-2" style={{ display: "grid", gap: 8 }}>
+            <label
+              className="identity-form-span-2"
+              style={{ display: "grid", gap: 8 }}
+            >
               <span style={{ color: TEXT_PRIMARY }}>Email</span>
               <Email
                 value={identity.email}
@@ -209,14 +229,15 @@ export function IdentityStep({
                 placeholder="bet@poncho.com"
                 classNames={{
                   ...emailAutocompleteClassNames,
-                  input: `email-auto-input ${errors.email
-                    ? "email-auto-input-error"
-                    : emailsMatch
-                      ? "email-auto-input-valid"
-                      : emailMismatch
-                        ? "email-auto-input-warning"
-                        : ""
-                    }`,
+                  input: `email-auto-input ${
+                    errors.email
+                      ? "email-auto-input-error"
+                      : emailsMatch
+                        ? "email-auto-input-valid"
+                        : emailMismatch
+                          ? "email-auto-input-warning"
+                          : ""
+                  }`,
                 }}
                 aria-label="Email"
                 onCopy={preventClipboardAction}
@@ -224,15 +245,23 @@ export function IdentityStep({
                 onPaste={preventClipboardAction}
                 onDrop={preventDropAction}
               />
-              {errors.email ? <small style={{ color: ERROR_TEXT }}>{errors.email}</small> : null}
+              {errors.email ? (
+                <small style={{ color: ERROR_TEXT }}>{errors.email}</small>
+              ) : null}
             </label>
 
-            <label className="identity-form-span-2" style={{ display: "grid", gap: 8 }}>
+            <label
+              className="identity-form-span-2"
+              style={{ display: "grid", gap: 8 }}
+            >
               <span style={{ color: TEXT_PRIMARY }}>Confirmar email</span>
               <input
                 value={identity.confirmEmail}
                 onChange={(e) => {
-                  onIdentityChange({ ...identity, confirmEmail: e.target.value });
+                  onIdentityChange({
+                    ...identity,
+                    confirmEmail: e.target.value,
+                  });
                   onClearErrors("confirmEmail");
                 }}
                 type="email"
@@ -253,38 +282,45 @@ export function IdentityStep({
                 placeholder="bet@poncho.com"
               />
               {errors.confirmEmail ? (
-                <small style={{ color: ERROR_TEXT }}>{errors.confirmEmail}</small>
+                <small style={{ color: ERROR_TEXT }}>
+                  {errors.confirmEmail}
+                </small>
               ) : emailMismatch ? (
-                <small style={{ color: "#ffd08f" }}>Los emails no coinciden.</small>
+                <small style={{ color: "#ffd08f" }}>
+                  Los emails no coinciden.
+                </small>
               ) : emailsMatch ? (
-                <small style={{ color: "#9ff3bf" }}>Los emails coinciden.</small>
+                <small style={{ color: "#9ff3bf" }}>
+                  Los emails coinciden.
+                </small>
               ) : null}
             </label>
 
-            <label className="identity-form-span-2" style={{ display: "grid", gap: 8 }}>
+            <label
+              className="identity-form-span-2"
+              style={{ display: "grid", gap: 8 }}
+            >
               <span style={{ color: TEXT_PRIMARY }}>Teléfono</span>
-              <PhoneInput
-                country="ar"
-                enableSearch
-                countryCodeEditable={false}
+              <input
+                name="telefono"
+                type="tel"
                 value={identity.telefono}
-                onChange={(value: string) =>
+                onChange={(e) =>
                   onIdentityChange({
                     ...identity,
-                    telefono: value.replace(/\D/g, "").slice(0, 15),
+                    telefono: e.target.value.replace(/\D/g, "").slice(0, 15),
                   })
                 }
-                inputClass={`phone-input-field ${errors.telefono ? "phone-input-field-error" : ""}`}
-                buttonClass={`phone-input-flag ${errors.telefono ? "phone-input-flag-error" : ""}`}
-                containerClass="phone-input-container"
-                dropdownClass="phone-input-dropdown"
-                inputProps={{
-                  name: "telefono",
-                  required: false,
-                  "aria-label": "Telefono",
-                  autoComplete: "tel",
+                inputMode="tel"
+                autoComplete="tel-national"
+                aria-label="Telefono"
+                style={{
+                  ...inputBase,
+                  border: errors.telefono
+                    ? "1px solid rgba(255, 110, 110, 0.85)"
+                    : inputBase.border,
                 }}
-                placeholder=""
+                placeholder="3874123456"
               />
               {errors.telefono ? (
                 <small style={{ color: ERROR_TEXT }}>{errors.telefono}</small>
@@ -296,7 +332,10 @@ export function IdentityStep({
                 type="checkbox"
                 checked={identity.acceptedLegal}
                 onChange={(e) =>
-                  onIdentityChange({ ...identity, acceptedLegal: e.target.checked })
+                  onIdentityChange({
+                    ...identity,
+                    acceptedLegal: e.target.checked,
+                  })
                 }
                 style={{ marginTop: 3 }}
               />
@@ -307,7 +346,7 @@ export function IdentityStep({
                   color: TEXT_SECONDARY,
                 }}
               >
-                Tengo mas de 18 años y he aceptado la{" "}
+                TENGO MAS DE 18 AÑOS Y HE ACEPTADO LA{" "}
                 <button
                   type="button"
                   onClick={(event) => {
@@ -325,7 +364,7 @@ export function IdentityStep({
                     font: "inherit",
                   }}
                 >
-                  Politica de Privacidad
+                  POLITICA DE PRIVACIDAD
                 </button>{" "}
                 y los{" "}
                 <button
@@ -345,32 +384,34 @@ export function IdentityStep({
                     font: "inherit",
                   }}
                 >
-                  Términos y Condiciones Generales
+                  TÉRMINOS Y CONDICIONES GENERALES
                 </button>
                 .
               </span>
             </label>
             {errors.acceptedLegal ? (
-              <small className="identity-form-span-2" style={{ color: ERROR_TEXT }}>
+              <small
+                className="identity-form-span-2"
+                style={{ color: ERROR_TEXT }}
+              >
                 {errors.acceptedLegal}
               </small>
             ) : null}
 
-            <label className="identity-form-span-2" style={{ display: "grid", gap: 8 }}>
+            <label
+              className="identity-form-span-2"
+              style={{ display: "grid", gap: 8 }}
+            >
               <span style={{ color: TEXT_PRIMARY }}>Codigo promocional</span>
               <input
                 value={referralCode}
                 onChange={(e) => {
                   onReferralCodeChange(e.target.value);
-                  onClearErrors("referralCode");
                 }}
                 type="text"
                 style={inputBase}
                 placeholder=""
               />
-              {errors.referralCode ? (
-                <small style={{ color: ERROR_TEXT }}>{errors.referralCode}</small>
-              ) : null}
             </label>
           </div>
           <div className="identity-form-actions">
@@ -380,7 +421,9 @@ export function IdentityStep({
               style={primaryButton}
               isLoading={isSubmitting}
               disabled={hasCompletedRegistrationDniError || isBootstrapping}
-              loadingLabel={isBootstrapping ? "Preparando..." : "Verificando..."}
+              loadingLabel={
+                isBootstrapping ? "Preparando..." : "Verificando..."
+              }
             >
               {isSubmitting ? "Verificando..." : "Verificar"}
             </LoadingButton>
@@ -392,7 +435,11 @@ export function IdentityStep({
       </form>
 
       <div className="identity-footer-wrap" aria-hidden="true">
-        <img src="/images/footer.png" alt="" className="identity-footer-image" />
+        <img
+          src="/images/footer.png"
+          alt=""
+          className="identity-footer-image"
+        />
       </div>
     </section>
   );
